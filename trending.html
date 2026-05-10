@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YouTube Charts VN - Trending Videos Playlist</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #17171b;
+      --panel-2: #222228;
+      --text: #f4f4f5;
+      --muted: #a1a1aa;
+      --accent: #ff0033;
+      --line: #303036;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, rgba(255, 0, 51, 0.22), transparent 36rem), var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(30px, 5vw, 56px);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+    }
+
+    .subtitle, .status, .meta {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px var(--accent);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 420px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .player-card, .list-card {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      background: rgba(23, 23, 27, 0.86);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+    }
+
+    .player-shell {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+    }
+
+    #player { width: 100%; height: 100%; }
+
+    .now-playing {
+      padding: 22px;
+    }
+
+    .rank {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .title {
+      margin: 8px 0 6px;
+      font-size: clamp(24px, 3vw, 36px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .artists { color: var(--muted); font-size: 17px; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 16px;
+      background: var(--panel-2);
+      color: var(--text);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); background: #303039; }
+    button.primary { background: var(--accent); }
+    button.primary:hover { background: #e6002e; }
+
+    .list-card {
+      max-height: calc(100vh - 64px);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 24px;
+    }
+
+    .list-head {
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .list-head h2 { margin: 0 0 6px; }
+    .status { font-size: 14px; }
+
+    .song-list {
+      overflow: auto;
+      padding: 8px;
+    }
+
+    .song {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 46px 56px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      padding: 10px;
+      border-radius: 18px;
+      background: transparent;
+    }
+
+    .song.active { background: rgba(255, 0, 51, 0.15); }
+    .song .num { color: var(--muted); font-weight: 800; text-align: center; }
+    .song img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: #111; }
+    .song-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
+    .song-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 14px; margin-top: 3px; }
+
+    .notice {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 800;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 920px) {
+      header, .layout { display: block; }
+      .badge { margin-top: 16px; }
+      .list-card { position: static; max-height: none; margin-top: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Trending Videos Việt Nam</h1>
+        <p class="subtitle">Playlist phát trực tiếp trong trang, dựa theo YouTube Charts Trending Videos VN Right Now.</p>
+      </div>
+      <div class="badge"><span class="dot"></span><span id="rangeLabel">Đang lấy trending hiện tại...</span></div>
+    </header>
+
+    <nav class="tabs" aria-label="YouTube Charts views">
+      <a class="tab" href="top_songs.html">Top Songs</a>
+      <a class="tab active" href="trending.html">Trending</a>
+    </nav>
+
+    <section class="layout">
+      <article class="player-card">
+        <div class="player-shell"><div id="player"></div></div>
+        <div class="now-playing">
+          <div class="rank" id="nowRank">#--</div>
+          <h2 class="title" id="nowTitle">Đang tải playlist</h2>
+          <div class="artists" id="nowArtists">Vui lòng chờ trong giây lát...</div>
+          <div class="controls">
+            <button id="prevBtn">Trước</button>
+            <button id="playBtn" class="primary">Play</button>
+            <button id="nextBtn">Tiếp</button>
+            <button id="shuffleBtn">Shuffle</button>
+          </div>
+          <div class="notice" id="notice">
+            Trang lấy danh sách Trending Videos VN Right Now từ YouTube Charts thông qua backend local.
+          </div>
+        </div>
+      </article>
+
+      <aside class="list-card">
+        <div class="list-head">
+          <h2>Bảng xếp hạng</h2>
+          <p class="status" id="status">Đang tải dữ liệu...</p>
+        </div>
+        <div class="song-list" id="songList"></div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script>
+    const API_PATH = '/api/trending-videos';
+    const STATIC_CHART_DATA = {"rangeLabel": "Right Now", "videos": [{"rank": 1, "title": "Tuyển Bạn Gái", "artists": "OgeNus", "channelName": "OgeNus Official", "videoId": "01_j6ahLhA4", "thumbnail": "https://i.ytimg.com/vi/01_j6ahLhA4/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 2, "title": "[UNhiddenGem Mixtape] 1. Tệ Hại & Xấu Xí (Intro) - B Ray", "artists": "B Ray", "channelName": "EvB Records", "videoId": "4vu3wIJA-D4", "thumbnail": "https://i.ytimg.com/vi/4vu3wIJA-D4/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 3, "title": "TNT", "artists": "CORTIS", "channelName": "HYBE LABELS", "videoId": "kRpaqR5sbf0", "thumbnail": "https://i.ytimg.com/vi/kRpaqR5sbf0/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 4, "title": "Dạo Gần Đây Anh Thấy Anh Không Bằng Ai Hết", "artists": "HIEUTHUHAI", "channelName": "HIEUTHUHAI", "videoId": "wHwRdqJ3TD4", "thumbnail": "https://i.ytimg.com/vi/wHwRdqJ3TD4/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 5, "title": "Vacheron Louie V", "artists": "HIEUTHUHAI, Hustlang Robber", "channelName": "HIEUTHUHAI", "videoId": "UUGScGFbPxk", "thumbnail": "https://i.ytimg.com/vi/UUGScGFbPxk/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 6, "title": "Chờ Tới Khi Anh Về", "artists": "HIEUTHUHAI, Hoang Ton", "channelName": "HIEUTHUHAI", "videoId": "dytPiW3fef0", "thumbnail": "https://i.ytimg.com/vi/dytPiW3fef0/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 7, "title": "춤 (CHOOM)", "artists": "BABYMONSTER", "channelName": "BABYMONSTER", "videoId": "x3eqqoZPV_E", "thumbnail": "https://i.ytimg.com/vi/x3eqqoZPV_E/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 8, "title": "REDRED", "artists": "CORTIS", "channelName": "HYBE LABELS", "videoId": "U6BDbXIah-Y", "thumbnail": "https://i.ytimg.com/vi/U6BDbXIah-Y/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 9, "title": "Mở Lòng Vì Ai Remix (Bánh Cuốn Remix) - Inso Cover ♫ Em Một Lòng Vì Anh Nhưng Anh Mở Lòng Vì Ai", "artists": "Bánh Cuốn Remix", "channelName": "Bánh Cuốn Remix", "videoId": "GrSyap-BqrQ", "thumbnail": "https://i.ytimg.com/vi/GrSyap-BqrQ/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 10, "title": "MẮT BÃO (OST Tiểu Đội 1978) - Tọi x Long Nón Lá x Phương Nghiêm", "artists": "Tọi", "channelName": "Tọi", "videoId": "xUZSXVJX1eY", "thumbnail": "https://i.ytimg.com/vi/xUZSXVJX1eY/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 11, "title": "SAU NÀY EM CƯỚI AI RỒI - THÁI HỌC | KIỀU CHI COVER", "artists": "Kiều Chi", "channelName": "Kiều Chi", "videoId": "iKLrfxGwfys", "thumbnail": "https://i.ytimg.com/vi/iKLrfxGwfys/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 12, "title": "ACAI", "artists": "CORTIS", "channelName": "CORTIS - Topic", "videoId": "3G0A03PFMg0", "thumbnail": "https://i.ytimg.com/vi/3G0A03PFMg0/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 13, "title": "Dế Choắt - Một Sao (Trình ba chấm)", "artists": "Dế Choắt (DC)", "channelName": "Dế Choắt", "videoId": "cMUyAqCyrms", "thumbnail": "https://i.ytimg.com/vi/cMUyAqCyrms/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 14, "title": "Nước Mắt Vu Quy Remix | Nhạc theo yêu cầu", "artists": "Lê Trọng Sỹ", "channelName": "Bolero Nét xưa", "videoId": "pChKUZcfZHE", "thumbnail": "https://i.ytimg.com/vi/pChKUZcfZHE/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 15, "title": "Nhạc Bolero Trữ Tình - Mưa Chiều Cô Liêu _ Nam Tiến  (video mới đẹp & bản phối mới dễ hát)", "artists": "Nam Tiến", "channelName": "Nam Tiến", "videoId": "ZY14D017hoU", "thumbnail": "https://i.ytimg.com/vi/ZY14D017hoU/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 16, "title": "It's Me", "artists": "ILLIT", "channelName": "HYBE LABELS", "videoId": "bMhDJ0S0OBA", "thumbnail": "https://i.ytimg.com/vi/bMhDJ0S0OBA/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 17, "title": "VỀ LẠI ĐỒI SIM GIA TIẾN | Nhạc Trữ Tình Xưa Bolero 2026 - LK Nhạc Vàng HAY NHẤT HIỆN NAY", "artists": "NÀNG QUÊ BOLERO", "channelName": "NÀNG QUÊ BOLERO", "videoId": "LYO5iuTedwQ", "thumbnail": "https://i.ytimg.com/vi/LYO5iuTedwQ/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 18, "title": "Hạt Mưa Vương Vấn Remix (Bản Chuẩn TikTok) - Hạt Mưa Vương Vấn Em Giờ Này Đang Nơi Đâu Remix", "artists": "Phan Duy Anh", "channelName": "ACV Entertainment", "videoId": "-YQBbJQ0dcE", "thumbnail": "https://i.ytimg.com/vi/-YQBbJQ0dcE/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 19, "title": "Vô Giá - Minh Vương M4U | Là ngày nắng ấm ta bước cùng nhau...", "artists": "Minh Vuong M4U", "channelName": "Minh Vương M4U", "videoId": "5y0609JR34A", "thumbnail": "https://i.ytimg.com/vi/5y0609JR34A/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 20, "title": "Bác Tôi - Du Thiên (Official MV) | Người mang tâm nguyện thay đổi non sông thịnh vượng vinh quang", "artists": "Du Thiên", "channelName": "Du Thiên Official", "videoId": "1mTE4gb4llA", "thumbnail": "https://i.ytimg.com/vi/1mTE4gb4llA/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 21, "title": "Sớm Như Vậy", "artists": "buitruonglinh", "channelName": "buitruonglinh", "videoId": "6hNenqz0ISA", "thumbnail": "https://i.ytimg.com/vi/6hNenqz0ISA/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 22, "title": "EM CƯỚI AI RỒI | THIÊN TÚ X MD ACOUSTIC | Nhạc Hoa Lời Việt | Lưu Văn Thưởng |Đò Đưa Em Qua Bến Sông", "artists": "Thiên Tú", "channelName": "Thiên Tú Official", "videoId": "rgMMNYl1Cpc", "thumbnail": "https://i.ytimg.com/vi/rgMMNYl1Cpc/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 23, "title": "SỰ ƯU TIÊN CỦA EM - LÊ GIA BẢO x THÁI HỌC | KIỀU CHI COVER", "artists": "Kiều Chi", "channelName": "Kiều Chi", "videoId": "CD_BFGQkIgY", "thumbnail": "https://i.ytimg.com/vi/CD_BFGQkIgY/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 24, "title": "TUYỆT HAY!!! LÁ DIÊU BÔNG (St Trần Tiến) | Bản phối mới giai điệu Blues Rock ngọt ngào #hoiucmusic", "artists": "Hồi Ức Music", "channelName": "Hồi Ức Music", "videoId": "XIlozh320QM", "thumbnail": "https://i.ytimg.com/vi/XIlozh320QM/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 25, "title": "Người Việt Mình Thương Nhau", "artists": "Cam Ly, Hòa Minzy", "channelName": "Gala Nhạc Việt", "videoId": "Wxl0SVqvfqE", "thumbnail": "https://i.ytimg.com/vi/Wxl0SVqvfqE/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 26, "title": "GIÓ ĐÊM QUA ĐƯỜNG (Hải Lai A Mộc) - CHU THÚY QUỲNH | Kìa ngàn ngôi sao lung linh dường như cũng có", "artists": "Chu Thúy Quỳnh Live Sessions", "channelName": "Chu Thúy Quỳnh Live Sessions", "videoId": "gpD0JmY0HEI", "thumbnail": "https://i.ytimg.com/vi/gpD0JmY0HEI/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 27, "title": "NGÔ LAN HƯƠNG | Về Đi Thôi (Official Music Video)", "artists": "Ngô Lan Hương", "channelName": "Ngô Lan Hương", "videoId": "4yd0OLJcjxg", "thumbnail": "https://i.ytimg.com/vi/4yd0OLJcjxg/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 28, "title": "Chiều Sân Ga Bolero", "artists": "HDDZMusic", "channelName": "HDDZMusic - Topic", "videoId": "TO4m-zWI3Xs", "thumbnail": "https://i.ytimg.com/vi/TO4m-zWI3Xs/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 29, "title": "Suy Nghĩ Trong Anh (R&B Version) - NDMT", "artists": "NDMT", "channelName": "NDMT", "videoId": "7Tq__Up58k0", "thumbnail": "https://i.ytimg.com/vi/7Tq__Up58k0/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}, {"rank": 30, "title": "Âm Thầm - BILLY100 x TOMMY TÈO (Prodby. B E E R U $)", "artists": "Billy100", "channelName": "BILLY 100 ", "videoId": "CbU-GDS-8Jw", "thumbnail": "https://i.ytimg.com/vi/CbU-GDS-8Jw/maxresdefault.jpg", "views": 0, "lastRank": null, "periodsOnChart": null}]};
+
+    let songs = [];
+    let currentIndex = 0;
+    let player;
+    let playerReady = false;
+    let pendingLoad = null;
+
+    const els = {
+      range: document.getElementById('rangeLabel'),
+      status: document.getElementById('status'),
+      list: document.getElementById('songList'),
+      nowRank: document.getElementById('nowRank'),
+      nowTitle: document.getElementById('nowTitle'),
+      nowArtists: document.getElementById('nowArtists'),
+      notice: document.getElementById('notice'),
+      prev: document.getElementById('prevBtn'),
+      play: document.getElementById('playBtn'),
+      next: document.getElementById('nextBtn'),
+      shuffle: document.getElementById('shuffleBtn')
+    };
+
+    window.onYouTubeIframeAPIReady = () => {
+      player = new YT.Player('player', {
+        playerVars: { autoplay: 0, rel: 0, playsinline: 1, modestbranding: 1 },
+        events: {
+          onReady: () => {
+            playerReady = true;
+            if (pendingLoad) loadSong(pendingLoad.index, pendingLoad.autoplay);
+            else if (songs.length) loadSong(0, false);
+          },
+          onStateChange: event => {
+            if (event.data === YT.PlayerState.ENDED) nextSong(true);
+            updatePlayButton();
+          }
+        }
+      });
+    };
+
+    function getThumbnail(videoId) {
+      return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+    }
+
+    async function getChart() {
+      if (location.protocol === 'file:') return STATIC_CHART_DATA;
+      try {
+        const response = await fetch(API_PATH, { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || `${response.status} ${response.statusText}`);
+        return data;
+      } catch (error) {
+        return STATIC_CHART_DATA;
+      }
+    }
+
+    function formatChartDate(value) {
+      const cleaned = String(value).replace(/-/g, '');
+      if (!/^\d{8}$/.test(cleaned)) return value || 'tuần mới nhất';
+      const end = new Date(`${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}T00:00:00`);
+      const start = new Date(end);
+      start.setDate(end.getDate() - 6);
+      return `${start.toLocaleDateString('vi-VN')} - ${end.toLocaleDateString('vi-VN')}`;
+    }
+
+    async function init() {
+      try {
+        const chart = await getChart();
+        songs = chart.videos;
+        if (!songs.length) throw new Error('YouTube Charts trả về danh sách trending rỗng');
+        els.range.textContent = chart.rangeLabel || 'Right Now';
+        els.status.textContent = `${songs.length} video trending từ YouTube Charts`;
+        els.notice.textContent = location.protocol === 'file:' ? 'Đang dùng dữ liệu trending được nhúng sẵn trong file HTML. Chạy backend local để lấy live chart mới nhất.' : 'Danh sách được lấy từ YouTube Charts Trending Videos VN Right Now; player tự chuyển video khi kết thúc.';
+      } catch (error) {
+        els.range.textContent = 'Không tải được chart';
+        els.status.textContent = 'Không có dữ liệu để phát';
+        els.nowTitle.textContent = 'Không tải được trending playlist';
+        els.nowArtists.textContent = error.message;
+        els.notice.textContent = 'Hãy chạy trang bằng lệnh: python youtube_charts_server.py, rồi mở http://127.0.0.1:8000 để backend local lấy đúng dữ liệu YouTube Charts.';
+        return;
+      }
+
+      renderList();
+      loadSong(0, false);
+    }
+
+    function renderList() {
+      els.list.innerHTML = songs.map((song, index) => `
+        <button class="song ${index === currentIndex ? 'active' : ''}" data-index="${index}">
+          <span class="num">#${song.rank}</span>
+          <img src="${song.thumbnail || getThumbnail(song.videoId)}" alt="" loading="lazy">
+          <span>
+            <span class="song-name">${escapeHtml(song.title)}</span>
+            <span class="song-artist">${escapeHtml(song.artists)}</span>
+          </span>
+        </button>
+      `).join('');
+
+      els.list.querySelectorAll('.song').forEach(button => {
+        button.addEventListener('click', () => loadSong(Number(button.dataset.index), true));
+      });
+    }
+
+    function loadSong(index, autoplay) {
+      if (!songs.length) return;
+      currentIndex = (index + songs.length) % songs.length;
+      const song = songs[currentIndex];
+      els.nowRank.textContent = `#${song.rank}`;
+      els.nowTitle.textContent = song.title;
+      els.nowArtists.textContent = song.artists;
+      renderList();
+
+      if (!playerReady || !song.videoId) {
+        pendingLoad = { index: currentIndex, autoplay };
+        return;
+      }
+      pendingLoad = null;
+      if (autoplay) player.loadVideoById(song.videoId);
+      else player.cueVideoById(song.videoId);
+      updatePlayButton();
+    }
+
+    function nextSong(autoplay) { loadSong(currentIndex + 1, autoplay); }
+    function prevSong() { loadSong(currentIndex - 1, true); }
+
+    function updatePlayButton() {
+      if (!playerReady) return;
+      els.play.textContent = player.getPlayerState() === YT.PlayerState.PLAYING ? 'Pause' : 'Play';
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+    }
+
+    els.prev.addEventListener('click', prevSong);
+    els.next.addEventListener('click', () => nextSong(true));
+    els.play.addEventListener('click', () => {
+      if (!songs.length) return;
+      if (!playerReady) {
+        pendingLoad = { index: currentIndex, autoplay: true };
+        return;
+      }
+      const song = songs[currentIndex];
+      const state = player.getPlayerState();
+      if (state === YT.PlayerState.PLAYING) player.pauseVideo();
+      else if (state === YT.PlayerState.CUED || state === YT.PlayerState.PAUSED) player.playVideo();
+      else player.loadVideoById(song.videoId);
+    });
+    els.shuffle.addEventListener('click', () => {
+      if (songs.length) loadSong(Math.floor(Math.random() * songs.length), true);
+    });
+
+    init();
+  </script>
+</body>
+</html>
