@@ -25,8 +25,12 @@ def fetch_chart_home(referer):
         raise RuntimeError("Cannot find YouTube Charts config")
 
     cfg = json.loads(match.group(1))
+    context = cfg["INNERTUBE_CONTEXT"]
+    context["client"]["gl"] = "VN"
+    context["client"]["hl"] = "vi"
+    context["client"]["originalUrl"] = referer
     payload = {
-        "context": cfg["INNERTUBE_CONTEXT"],
+        "context": context,
         "browseId": "FEmusic_analytics_charts_home",
         "query": json.dumps({"region": "vn"}, separators=(",", ":")),
     }
@@ -35,7 +39,8 @@ def fetch_chart_home(referer):
         "User-Agent": "Mozilla/5.0",
         "Origin": "https://charts.youtube.com",
         "Referer": referer,
-        "X-Goog-Visitor-Id": cfg["INNERTUBE_CONTEXT"]["client"].get("visitorData", ""),
+        "Accept-Language": "vi-VN,vi;q=0.9,en;q=0.8",
+        "X-Goog-Visitor-Id": context["client"].get("visitorData", ""),
     }
     req = Request(INNERTUBE, data=json.dumps(payload, separators=(",", ":")).encode(), headers=headers)
     return json.loads(urlopen(req, timeout=30).read().decode("utf-8", "replace"))
