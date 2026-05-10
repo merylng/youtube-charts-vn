@@ -48,3 +48,9 @@ Updated top_songs.html: 100 songs, rangeEnd=2026-05-07
 Updated trending.html: 30 videos, range=Right Now
 Next: commit and push top_songs.html and trending.html to update GitHub Pages.
  M auto_update_charts.log
+warning: in the working copy of 'auto_update_charts.log', LF will be replaced by CRLF the next time Git touches it
+[main 9966c3d] update lasted data - 2026
+ 1 file changed, 5 insertions(+)
+To https://github.com/merylng1010/youtube-charts-vn.git
+   9835e1e..9966c3d  main -> main
+[Mon 11-May-26  1:28:15.63] Update, commit, and push completed
