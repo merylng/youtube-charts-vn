@@ -16,7 +16,7 @@ if errorlevel 1 (
 
 git status --short >> "%LOG_FILE%" 2>&1
 
-git add top_songs.html trending.html scripts\update_static_pages.py README.md >> "%LOG_FILE%" 2>&1
+git add top_songs.html trending.html scripts\update_static_pages.py README.md auto_update_charts.log >> "%LOG_FILE%" 2>&1
 
 git diff --cached --quiet
 if not errorlevel 1 (
