@@ -54,3 +54,8 @@ warning: in the working copy of 'auto_update_charts.log', LF will be replaced by
 To https://github.com/merylng1010/youtube-charts-vn.git
    9835e1e..9966c3d  main -> main
 [Mon 11-May-26  1:28:15.63] Update, commit, and push completed
+warning: in the working copy of 'auto_update_charts.log', LF will be replaced by CRLF the next time Git touches it
+[main a5d344a] update lasted data - 2026
+ 1 file changed, 6 insertions(+)
+To https://github.com/merylng1010/youtube-charts-vn.git
+   9966c3d..a5d344a  main -> main

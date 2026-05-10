@@ -1,0 +1,42 @@
+name: Update YouTube Charts Data
+
+on:
+  schedule:
+    # Runs every day at 07:00 Vietnam time (00:00 UTC)
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-charts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Update static chart pages
+        run: python scripts/update_static_pages.py
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add top_songs.html trending.html
+
+          if git diff --cached --quiet; then
+            echo "No chart data changes to commit."
+            exit 0
+          fi
+
+          TODAY=$(TZ=Asia/Ho_Chi_Minh date +"%Y/%m/%d")
+          git commit -m "update lasted data - $TODAY"
+          git push
