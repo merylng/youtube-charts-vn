@@ -14,3 +14,9 @@ Next: commit and push top_songs.html and trending.html to update GitHub Pages.
 ?? auto_update_charts.log
 ?? create_schedule_task.ps1
 [Mon 11-May-26  1:14:02.37] No changes to commit
+[Mon 11-May-26  1:17:07.04] Starting YouTube Charts update
+Updated top_songs.html: 100 songs, rangeEnd=2026-05-07
+Updated trending.html: 30 videos, range=Right Now
+Next: commit and push top_songs.html and trending.html to update GitHub Pages.
+ M auto_update_charts.log
+[Mon 11-May-26  1:17:12.10] No changes to commit
