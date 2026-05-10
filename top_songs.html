@@ -314,15 +314,7 @@
     }
 
     async function getChart() {
-      if (location.protocol === 'file:') return STATIC_CHART_DATA;
-      try {
-        const response = await fetch(API_PATH, { cache: 'no-store' });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || `${response.status} ${response.statusText}`);
-        return data;
-      } catch (error) {
-        return STATIC_CHART_DATA;
-      }
+      return STATIC_CHART_DATA;
     }
 
     function formatChartDate(value) {
