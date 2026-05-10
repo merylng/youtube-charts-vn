@@ -43,3 +43,8 @@ warning: in the working copy of 'auto_update_charts.log', LF will be replaced by
 To https://github.com/merylng1010/youtube-charts-vn.git
    2ec9e8e..96d95a4  main -> main
 [Mon 11-May-26  1:24:24.87] Update, commit, and push completed
+[Mon 11-May-26  1:28:07.95] Starting YouTube Charts update
+Updated top_songs.html: 100 songs, rangeEnd=2026-05-07
+Updated trending.html: 30 videos, range=Right Now
+Next: commit and push top_songs.html and trending.html to update GitHub Pages.
+ M auto_update_charts.log
