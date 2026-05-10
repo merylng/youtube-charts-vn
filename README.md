@@ -1,37 +1,33 @@
-# YouTube Charts VN Pages
+# YouTube Charts VN
 
-This repository contains static HTML pages for showing YouTube Charts Vietnam data:
+This repository publishes static YouTube Charts pages with GitHub Pages.
+
+It includes:
 
 - Top Songs Vietnam Weekly
 - Trending Videos Vietnam Right Now
 
-The pages are designed for **GitHub Pages**. Other people can view them through a public GitHub Pages URL.
+The website is static. Data is embedded directly inside the HTML files and refreshed by a Python update script, either manually or through GitHub Actions.
 
-## Current repository structure
+## Active files
 
 ```text
-youtube-charts-vn/
-│
-├─ index.html
-├─ top_songs.html
-├─ trending.html
-│
-└─ scripts/
-   └─ update_static_pages.py
+index.html
+top_songs.html
+trending.html
+scripts/update_static_pages.py
+.github/workflows/update-charts.yml
 ```
 
-## File meanings
+## File purpose
 
 ### `index.html`
 
-Main landing page.
+Landing page for the GitHub Pages site.
 
-It redirects users to the Top Songs page and provides navigation links to:
+It redirects users to `top_songs.html` and provides navigation links to the available chart pages.
 
-- `top_songs.html`
-- `trending.html`
-
-When GitHub Pages is enabled, this is the default page opened at:
+Default GitHub Pages URL:
 
 ```text
 https://<github-username>.github.io/<repository-name>/
@@ -41,194 +37,161 @@ https://<github-username>.github.io/<repository-name>/
 
 Static page for **YouTube Charts VN Top Songs Weekly**.
 
-It shows the Top Songs list and includes a YouTube iframe player so users can play songs inside the page.
+It contains:
 
-This file contains embedded chart data, so it can work on GitHub Pages without a backend server.
+- the page UI,
+- the embedded Top Songs chart data,
+- JavaScript logic to render the list,
+- YouTube iframe player logic for in-page playback.
 
-Direct URL after publishing:
+The embedded data is stored in the JavaScript variable:
 
-```text
-https://<github-username>.github.io/<repository-name>/top_songs.html
+```js
+const STATIC_CHART_DATA = ...
 ```
 
 ### `trending.html`
 
 Static page for **YouTube Charts VN Trending Videos Right Now**.
 
-It shows the Trending Videos list and includes a YouTube iframe player so users can play videos inside the page.
+It contains:
 
-This file also contains embedded chart data, so it can work on GitHub Pages without a backend server.
+- the page UI,
+- the embedded Trending Videos chart data,
+- JavaScript logic to render the list,
+- YouTube iframe player logic for in-page playback.
 
-Direct URL after publishing:
+The embedded data is also stored in:
 
-```text
-https://<github-username>.github.io/<repository-name>/trending.html
+```js
+const STATIC_CHART_DATA = ...
 ```
 
 ### `scripts/update_static_pages.py`
 
-Helper script for refreshing the embedded chart data inside the static HTML pages.
+Python script that refreshes the embedded chart data inside the HTML pages.
 
-Run this script locally before uploading or committing updated pages to GitHub:
+It does the following:
 
-```bash
-python scripts/update_static_pages.py
-```
+1. Fetches YouTube Charts VN Top Songs Weekly data.
+2. Fetches YouTube Charts VN Trending Videos Right Now data.
+3. Extracts chart entries and video IDs.
+4. Replaces the `STATIC_CHART_DATA` block inside:
+   - `top_songs.html`
+   - `trending.html`
+5. Saves the updated HTML files.
 
-It updates the embedded data inside:
-
-```text
-top_songs.html
-trending.html
-```
-
-After running it, commit or upload the updated HTML files to GitHub so GitHub Pages shows the latest data.
-
-## How the website works
-
-GitHub Pages can only host static files such as:
-
-- HTML
-- CSS
-- JavaScript
-
-It does **not** run Python scripts.
-
-Because of that, the chart data is embedded directly inside:
-
-```text
-top_songs.html
-trending.html
-```
-
-The flow is:
-
-```text
-Run scripts/update_static_pages.py locally
-        ↓
-Fetch latest YouTube Charts data
-        ↓
-Embed the data into top_songs.html and trending.html
-        ↓
-Commit or upload the updated HTML files to GitHub
-        ↓
-GitHub Pages publishes the static website
-        ↓
-Users open the public URL and view the chart lists
-```
-
-The website stores chart metadata and YouTube video IDs. Actual playback is handled by the YouTube iframe player.
-
-## Local usage
-
-You can open these files directly in a browser:
-
-```text
-top_songs.html
-trending.html
-```
-
-The lists will appear because the chart data is already embedded in the HTML files.
-
-However, YouTube iframe playback may not always work correctly when opened with `file://`. Playback usually works better after publishing to GitHub Pages because the page is served over HTTPS.
-
-## Updating chart data
-
-To refresh the chart data:
+Manual run:
 
 ```bash
 python scripts/update_static_pages.py
 ```
 
-Then commit or upload the updated files:
+### `.github/workflows/update-charts.yml`
+
+GitHub Actions workflow that automatically runs the update script.
+
+It is triggered by:
+
+1. Schedule:
+
+```yaml
+- cron: "0 */2 * * *"
+```
+
+This means the workflow runs every 2 hours.
+
+2. Manual trigger:
+
+```yaml
+workflow_dispatch:
+```
+
+This allows running it from the GitHub Actions UI with **Run workflow**.
+
+## Update flow
+
+### Scheduled or manual GitHub Actions run
 
 ```text
-index.html
+GitHub Actions trigger
+        ↓
+Checkout repository
+        ↓
+Set up Python 3.12
+        ↓
+Run scripts/update_static_pages.py
+        ↓
+Update embedded data in top_songs.html and trending.html
+        ↓
+Git checks whether those files changed
+        ↓
+If changed: commit and push to main
+        ↓
+GitHub Pages rebuilds and publishes the updated site
+```
+
+## Commit behavior
+
+The workflow only creates a commit if either of these files changes:
+
+```text
 top_songs.html
 trending.html
-scripts/update_static_pages.py
 ```
 
-Usually only these files change after an update:
+If YouTube Charts returns the same data as the previous run, there is no file diff, so the workflow exits successfully without creating a new commit.
+
+Commit message format:
 
 ```text
-top_songs.html
-trending.html
-```
-
-## Publishing with GitHub Pages
-
-### 1. Create or open the GitHub repository
-
-Example repository name:
-
-```text
-youtube-charts-vn
-```
-
-### 2. Upload the files
-
-Make sure the repository contains:
-
-```text
-index.html
-top_songs.html
-trending.html
-scripts/update_static_pages.py
-```
-
-### 3. Enable GitHub Pages
-
-In the GitHub repository:
-
-1. Open **Settings**.
-2. Open **Pages**.
-3. Under **Build and deployment**, choose:
-   - Source: **Deploy from a branch**
-   - Branch: **main**
-   - Folder: **/ root**
-4. Click **Save**.
-
-### 4. Get the public URL
-
-After GitHub Pages finishes deploying, GitHub will show a message like:
-
-```text
-Your site is live at https://<github-username>.github.io/<repository-name>/
+update lasted data - yyyy/mm/dd
 ```
 
 Example:
 
 ```text
-https://merylng1010.github.io/youtube-charts-vn/
+update lasted data - 2026/05/11
 ```
 
-Share that URL with other people.
+## GitHub Pages behavior
 
-## Page URLs
+GitHub Pages serves the static HTML files from the repository.
 
-Default page:
+It does not run Python.
+
+That is why `scripts/update_static_pages.py` must run before the public website can show updated chart data.
+
+After GitHub Actions commits updated HTML files, GitHub Pages usually refreshes the public URL within a few minutes.
+
+## Public URLs
+
+Landing page:
 
 ```text
 https://<github-username>.github.io/<repository-name>/
 ```
 
-Top Songs page:
+Top Songs:
 
 ```text
 https://<github-username>.github.io/<repository-name>/top_songs.html
 ```
 
-Trending page:
+Trending:
 
 ```text
 https://<github-username>.github.io/<repository-name>/trending.html
 ```
 
-## Important notes
+## Playback notes
 
-- GitHub Pages does not run Python.
-- The Python script is only for updating the static HTML files locally.
-- The public website will not automatically update by itself.
-- To refresh public data, run `python scripts/update_static_pages.py`, then commit or upload the updated HTML files.
-- Some YouTube videos may not play inside the iframe if embedding is disabled or if there are region/copyright restrictions.
+The pages use the YouTube iframe player.
+
+Some videos may not play inside the page if:
+
+- embedding is disabled by the video owner,
+- the video has region restrictions,
+- YouTube applies copyright or playback limitations.
+
+The chart list can still render even if some individual videos cannot be played in the embedded player.
