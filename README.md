@@ -126,7 +126,156 @@ This allows running it manually from the GitHub Actions UI with **Run workflow**
 
 ---
 
-## III. 🔄 Update Flow
+## III. 🧠 How the UI Works
+
+### 1. 📍 Data source
+
+The chart data comes from YouTube Charts:
+
+```text
+https://charts.youtube.com/charts/TopSongs/vn/weekly
+https://charts.youtube.com/charts/TrendingVideos/vn/RightNow
+```
+
+The updater script reads the YouTube Charts page config, then calls YouTube's internal chart endpoint:
+
+```text
+https://charts.youtube.com/youtubei/v1/browse?alt=json
+```
+
+The request is forced to Vietnam context:
+
+```text
+region = vn
+gl = VN
+hl = vi
+Accept-Language = vi-VN
+```
+
+This prevents GitHub Actions runners from accidentally fetching US/global chart data.
+
+---
+
+### 2. 📥 Fetch/update method
+
+The Python script:
+
+```text
+scripts/update_static_pages.py
+```
+
+uses HTTP requests to:
+
+1. Load the YouTube Charts page.
+2. Extract the `ytcfg` / InnerTube context.
+3. Send a JSON request to the YouTube Charts internal endpoint.
+4. Parse the JSON response.
+5. Extract the relevant chart entries.
+
+For **Top Songs**, the script extracts:
+
+```text
+rank
+title
+artists
+videoId
+thumbnail
+views
+lastRank
+periodsOnChart
+rangeEnd
+updatedAt
+```
+
+For **Trending Videos**, the script extracts:
+
+```text
+rank
+title
+artists
+channelName
+videoId
+thumbnail
+lastRank
+periodsOnChart
+rangeLabel
+updatedAt
+```
+
+Note: Trending Videos currently does not expose reliable view counts in the YouTube Charts response, so views are not displayed for the Trending tab.
+
+---
+
+### 3. 📦 Static output method
+
+GitHub Pages cannot run Python.
+
+Because of that, the script writes the fetched data directly into the HTML files as embedded JavaScript:
+
+```js
+const STATIC_CHART_DATA = {...}
+```
+
+The updated files are:
+
+```text
+top_songs.html
+trending.html
+```
+
+When a user opens the website, the browser does **not** call YouTube Charts directly. Instead, it reads the already embedded `STATIC_CHART_DATA` from the HTML file and renders the UI.
+
+---
+
+### 4. 🖥️ UI rendering method
+
+The HTML pages use client-side JavaScript to:
+
+1. Read `STATIC_CHART_DATA`.
+2. Render the chart list.
+3. Show the current selected song/video.
+4. Load the selected `videoId` into the YouTube iframe player.
+5. Handle playback controls:
+   - Play / Pause
+   - Previous
+   - Next
+   - Repeat
+   - Shuffle
+
+The actual video/audio playback is handled by YouTube through the iframe player:
+
+```text
+https://www.youtube.com/iframe_api
+```
+
+GitHub Pages only hosts the UI and embedded chart data. YouTube streams the actual media.
+
+---
+
+### 5. 📤 Output shown on the website
+
+The website outputs:
+
+#### Top Songs page
+
+- Weekly Top Songs list for Vietnam.
+- Current song title.
+- Artist/singer name.
+- View count for the selected song.
+- Last updated time.
+- YouTube iframe playback.
+
+#### Trending page
+
+- Trending Videos list for Vietnam.
+- Current video title.
+- Artist/channel name.
+- Last updated time.
+- YouTube iframe playback.
+
+---
+
+## IV. 🔄 Update Flow
 
 ### 1. GitHub Actions run flow
 
@@ -139,7 +288,9 @@ Set up Python 3.12
         ↓
 Run scripts/update_static_pages.py
         ↓
-Update embedded data in top_songs.html and trending.html
+Fetch Vietnam YouTube Charts data
+        ↓
+Embed data into top_songs.html and trending.html
         ↓
 Git checks whether those files changed
         ↓
@@ -162,7 +313,7 @@ GitHub Pages rebuilds and publishes the updated site
 
 ---
 
-## IV. 📝 Commit Behavior
+## V. 📝 Commit Behavior
 
 The workflow only creates a commit if either of these files changes:
 
@@ -187,7 +338,7 @@ update lasted data - 2026/05/11
 
 ---
 
-## V. 🌐 GitHub Pages Behavior
+## VI. 🌐 GitHub Pages Behavior
 
 GitHub Pages serves the static HTML files from the repository.
 
@@ -199,7 +350,7 @@ Important notes:
 
 ---
 
-## VI. 🔗 Public URLs
+## VII. 🔗 Public URLs
 
 Landing page:
 
@@ -221,7 +372,7 @@ https://<github-username>.github.io/<repository-name>/trending.html
 
 ---
 
-## VII. ▶️ Playback Notes
+## VIII. ▶️ Playback Notes
 
 The pages use the YouTube iframe player.
 
@@ -232,3 +383,5 @@ Some videos may not play inside the page if:
 - YouTube applies copyright or playback limitations.
 
 The chart list can still render even if some individual videos cannot be played in the embedded player.
+
+Playback through the embedded YouTube iframe may contribute views to the original YouTube video, but YouTube decides whether each playback is counted as a valid view.
