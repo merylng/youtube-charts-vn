@@ -1,5 +1,7 @@
 import json
 import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -122,6 +124,10 @@ def extract_trending_videos(data):
     return {"rangeLabel": "Right Now", "videos": videos}
 
 
+def vietnam_timestamp():
+    return datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).isoformat(timespec="seconds")
+
+
 def update_static_data(file_path, payload):
     html = file_path.read_text(encoding="utf-8")
     serialized = json.dumps(payload, ensure_ascii=False)
@@ -136,8 +142,11 @@ def update_static_data(file_path, payload):
 
 
 def main():
+    updated_at = vietnam_timestamp()
     top_songs = extract_top_songs(fetch_chart_home(TOP_SONGS_PAGE))
     trending = extract_trending_videos(fetch_chart_home(TRENDING_VIDEOS_PAGE))
+    top_songs["updatedAt"] = updated_at
+    trending["updatedAt"] = updated_at
 
     update_static_data(TOP_SONGS_HTML, top_songs)
     update_static_data(TRENDING_HTML, trending)
