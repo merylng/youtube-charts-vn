@@ -249,6 +249,7 @@
             <button id="prevBtn">Trước</button>
             <button id="playBtn" class="primary">Play</button>
             <button id="nextBtn">Tiếp</button>
+            <button id="repeatBtn" aria-pressed="false">Repeat: Off</button>
             <button id="shuffleBtn">Shuffle</button>
           </div>
           <div class="notice" id="notice">
@@ -277,6 +278,7 @@
     let player;
     let playerReady = false;
     let pendingLoad = null;
+    let repeatEnabled = false;
 
     const els = {
       range: document.getElementById('rangeLabel'),
@@ -289,6 +291,7 @@
       prev: document.getElementById('prevBtn'),
       play: document.getElementById('playBtn'),
       next: document.getElementById('nextBtn'),
+      repeat: document.getElementById('repeatBtn'),
       shuffle: document.getElementById('shuffleBtn')
     };
 
@@ -302,7 +305,10 @@
             else if (songs.length) loadSong(0, false);
           },
           onStateChange: event => {
-            if (event.data === YT.PlayerState.ENDED) nextSong(true);
+            if (event.data === YT.PlayerState.ENDED) {
+              if (repeatEnabled && songs[currentIndex]) player.loadVideoById(songs[currentIndex].videoId);
+              else nextSong(true);
+            }
             updatePlayButton();
           }
         }
@@ -391,12 +397,22 @@
       els.play.textContent = player.getPlayerState() === YT.PlayerState.PLAYING ? 'Pause' : 'Play';
     }
 
+    function updateRepeatButton() {
+      els.repeat.textContent = repeatEnabled ? 'Repeat: On' : 'Repeat: Off';
+      els.repeat.classList.toggle('primary', repeatEnabled);
+      els.repeat.setAttribute('aria-pressed', String(repeatEnabled));
+    }
+
     function escapeHtml(value) {
       return String(value).replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
     }
 
     els.prev.addEventListener('click', prevSong);
     els.next.addEventListener('click', () => nextSong(true));
+    els.repeat.addEventListener('click', () => {
+      repeatEnabled = !repeatEnabled;
+      updateRepeatButton();
+    });
     els.play.addEventListener('click', () => {
       if (!songs.length) return;
       if (!playerReady) {
@@ -413,6 +429,7 @@
       if (songs.length) loadSong(Math.floor(Math.random() * songs.length), true);
     });
 
+    updateRepeatButton();
     init();
   </script>
 </body>
