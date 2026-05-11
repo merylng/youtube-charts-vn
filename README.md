@@ -55,125 +55,125 @@ scripts/update_static_pages.py
 
 ## II. 📌 File Purposes
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 1. 🏠 `index.html`
+### 1. 🏠 `index.html`
 
-&nbsp;&nbsp;&nbsp;&nbsp;Landing page for the GitHub Pages site.
+Landing page for the GitHub Pages site.
 
-&nbsp;&nbsp;&nbsp;&nbsp;Purpose:
+Purpose:
 
-&nbsp;&nbsp;&nbsp;&nbsp;- Redirects users to `top_songs.html`.
-&nbsp;&nbsp;&nbsp;&nbsp;- Provides navigation links to the available chart pages.
+  - Redirects users to `top_songs.html`.
+  - Provides navigation links to the available chart pages.
 
-&nbsp;&nbsp;&nbsp;&nbsp;Default GitHub Pages URL:
+Default GitHub Pages URL:
 
 ```text
 https://<github-username>.github.io/<repository-name>/
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 2. 🎵 `top_songs.html`
+### 2. 🎵 `top_songs.html`
 
-&nbsp;&nbsp;&nbsp;&nbsp;Static page for **YouTube Charts VN Top Songs Weekly**.
+Static page for **YouTube Charts VN Top Songs Weekly**.
 
-&nbsp;&nbsp;&nbsp;&nbsp;This file contains:
+This file contains:
 
-&nbsp;&nbsp;&nbsp;&nbsp;- Page UI.
-&nbsp;&nbsp;&nbsp;&nbsp;- Embedded Top Songs chart data.
-&nbsp;&nbsp;&nbsp;&nbsp;- JavaScript logic to render the song list.
-&nbsp;&nbsp;&nbsp;&nbsp;- YouTube iframe player logic for in-page playback.
+  - Page UI.
+  - Embedded Top Songs chart data.
+  - JavaScript logic to render the song list.
+  - YouTube iframe player logic for in-page playback.
 
-&nbsp;&nbsp;&nbsp;&nbsp;The embedded data is stored in:
-
-```js
-const STATIC_CHART_DATA = ...
-```
-
-&nbsp;&nbsp;&nbsp;&nbsp;---
-
-&nbsp;&nbsp;&nbsp;&nbsp;### 3. 🔥 `trending.html`
-
-&nbsp;&nbsp;&nbsp;&nbsp;Static page for **YouTube Charts VN Trending Videos Right Now**.
-
-&nbsp;&nbsp;&nbsp;&nbsp;This file contains:
-
-&nbsp;&nbsp;&nbsp;&nbsp;- Page UI.
-&nbsp;&nbsp;&nbsp;&nbsp;- Embedded Trending Videos chart data.
-&nbsp;&nbsp;&nbsp;&nbsp;- JavaScript logic to render the trending list.
-&nbsp;&nbsp;&nbsp;&nbsp;- YouTube iframe player logic for in-page playback.
-
-&nbsp;&nbsp;&nbsp;&nbsp;The embedded data is also stored in:
+The embedded data is stored in:
 
 ```js
 const STATIC_CHART_DATA = ...
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 4. 🐍 `scripts/update_static_pages.py`
+### 3. 🔥 `trending.html`
 
-&nbsp;&nbsp;&nbsp;&nbsp;Python script that refreshes the embedded chart data inside the HTML pages.
+Static page for **YouTube Charts VN Trending Videos Right Now**.
 
-&nbsp;&nbsp;&nbsp;&nbsp;What it does:
+This file contains:
 
-&nbsp;&nbsp;&nbsp;&nbsp;1. Fetches YouTube Charts VN Top Songs Weekly data.
-&nbsp;&nbsp;&nbsp;&nbsp;2. Fetches YouTube Charts VN Trending Videos Right Now data.
-&nbsp;&nbsp;&nbsp;&nbsp;3. Extracts chart entries and video IDs.
-&nbsp;&nbsp;&nbsp;&nbsp;4. Replaces the `STATIC_CHART_DATA` block inside:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- `top_songs.html`
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- `trending.html`
-&nbsp;&nbsp;&nbsp;&nbsp;5. Saves the updated HTML files.
+  - Page UI.
+  - Embedded Trending Videos chart data.
+  - JavaScript logic to render the trending list.
+  - YouTube iframe player logic for in-page playback.
 
-&nbsp;&nbsp;&nbsp;&nbsp;Manual run:
+The embedded data is also stored in:
+
+```js
+const STATIC_CHART_DATA = ...
+```
+
+---
+
+### 4. 🐍 `scripts/update_static_pages.py`
+
+Python script that refreshes the embedded chart data inside the HTML pages.
+
+What it does:
+
+  1. Fetches YouTube Charts VN Top Songs Weekly data.
+  2. Fetches YouTube Charts VN Trending Videos Right Now data.
+  3. Extracts chart entries and video IDs.
+  4. Replaces the `STATIC_CHART_DATA` block inside:
+  - `top_songs.html`
+  - `trending.html`
+  5. Saves the updated HTML files.
+
+Manual run:
 
 ```bash
 python scripts/update_static_pages.py
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 5. ⚙️ `.github/workflows/update-charts.yml`
+### 5. ⚙️ `.github/workflows/update-charts.yml`
 
-&nbsp;&nbsp;&nbsp;&nbsp;GitHub Actions workflow that automatically runs the update script.
+GitHub Actions workflow that automatically runs the update script.
 
-&nbsp;&nbsp;&nbsp;&nbsp;It is triggered by:
+It is triggered by:
 
-&nbsp;&nbsp;&nbsp;&nbsp;#### a. ⏰ Schedule
+#### a. ⏰ Schedule
 
 ```yaml
 - cron: "0 */2 * * *"
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;This means the workflow runs every **2 hours**.
+This means the workflow runs every **2 hours**.
 
-&nbsp;&nbsp;&nbsp;&nbsp;#### b. ▶️ Manual Trigger
+#### b. ▶️ Manual Trigger
 
 ```yaml
 workflow_dispatch:
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;This allows running it manually from the GitHub Actions UI with **Run workflow**.
+This allows running it manually from the GitHub Actions UI with **Run workflow**.
 
 ---
 
 ## III. 🧠 How the UI Works
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 1. 📍 Data source
+### 1. 📍 Data source
 
-&nbsp;&nbsp;&nbsp;&nbsp;The chart data comes from YouTube Charts:
+The chart data comes from YouTube Charts:
 
 ```text
 https://charts.youtube.com/charts/TopSongs/vn/weekly
 https://charts.youtube.com/charts/TrendingVideos/vn/RightNow
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;The updater script reads the YouTube Charts page config, then calls YouTube's internal chart endpoint:
+The updater script reads the YouTube Charts page config, then calls YouTube's internal chart endpoint:
 
 ```text
 https://charts.youtube.com/youtubei/v1/browse?alt=json
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;The request is forced to Vietnam context:
+The request is forced to Vietnam context:
 
 ```text
 region = vn
@@ -182,27 +182,27 @@ hl = vi
 Accept-Language = vi-VN
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;This prevents GitHub Actions runners from accidentally fetching US/global chart data.
+This prevents GitHub Actions runners from accidentally fetching US/global chart data.
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 2. 📥 Fetch/update method
+### 2. 📥 Fetch/update method
 
-&nbsp;&nbsp;&nbsp;&nbsp;The Python script:
+The Python script:
 
 ```text
 scripts/update_static_pages.py
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;uses HTTP requests to:
+uses HTTP requests to:
 
-&nbsp;&nbsp;&nbsp;&nbsp;1. Load the YouTube Charts page.
-&nbsp;&nbsp;&nbsp;&nbsp;2. Extract the `ytcfg` / InnerTube context.
-&nbsp;&nbsp;&nbsp;&nbsp;3. Send a JSON request to the YouTube Charts internal endpoint.
-&nbsp;&nbsp;&nbsp;&nbsp;4. Parse the JSON response.
-&nbsp;&nbsp;&nbsp;&nbsp;5. Extract the relevant chart entries.
+  1. Load the YouTube Charts page.
+  2. Extract the `ytcfg` / InnerTube context.
+  3. Send a JSON request to the YouTube Charts internal endpoint.
+  4. Parse the JSON response.
+  5. Extract the relevant chart entries.
 
-&nbsp;&nbsp;&nbsp;&nbsp;For **Top Songs**, the script extracts:
+For **Top Songs**, the script extracts:
 
 ```text
 rank
@@ -217,7 +217,7 @@ rangeEnd
 updatedAt
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;For **Trending Videos**, the script extracts:
+For **Trending Videos**, the script extracts:
 
 ```text
 rank
@@ -232,84 +232,84 @@ rangeLabel
 updatedAt
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;Note: Trending Videos currently does not expose reliable view counts in the YouTube Charts response, so views are not displayed for the Trending tab.
+Note: Trending Videos currently does not expose reliable view counts in the YouTube Charts response, so views are not displayed for the Trending tab.
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 3. 📦 Static output method
+### 3. 📦 Static output method
 
-&nbsp;&nbsp;&nbsp;&nbsp;GitHub Pages cannot run Python.
+GitHub Pages cannot run Python.
 
-&nbsp;&nbsp;&nbsp;&nbsp;Because of that, the script writes the fetched data directly into the HTML files as embedded JavaScript:
+Because of that, the script writes the fetched data directly into the HTML files as embedded JavaScript:
 
 ```js
 const STATIC_CHART_DATA = {...}
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;The updated files are:
+The updated files are:
 
 ```text
 top_songs.html
 trending.html
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;When a user opens the website, the browser does **not** call YouTube Charts directly. Instead, it reads the already embedded `STATIC_CHART_DATA` from the HTML file and renders the UI.
+When a user opens the website, the browser does **not** call YouTube Charts directly. Instead, it reads the already embedded `STATIC_CHART_DATA` from the HTML file and renders the UI.
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 4. 🖥️ UI rendering method
+### 4. 🖥️ UI rendering method
 
-&nbsp;&nbsp;&nbsp;&nbsp;The HTML pages use client-side JavaScript to:
+The HTML pages use client-side JavaScript to:
 
-&nbsp;&nbsp;&nbsp;&nbsp;1. Read `STATIC_CHART_DATA`.
-&nbsp;&nbsp;&nbsp;&nbsp;2. Render the chart list.
-&nbsp;&nbsp;&nbsp;&nbsp;3. Show the current selected song/video.
-&nbsp;&nbsp;&nbsp;&nbsp;4. Load the selected `videoId` into the YouTube iframe player.
-&nbsp;&nbsp;&nbsp;&nbsp;5. Handle playback controls:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Play / Pause
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Previous
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Next
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Repeat
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Shuffle
+  1. Read `STATIC_CHART_DATA`.
+  2. Render the chart list.
+  3. Show the current selected song/video.
+  4. Load the selected `videoId` into the YouTube iframe player.
+  5. Handle playback controls:
+  - Play / Pause
+  - Previous
+  - Next
+  - Repeat
+  - Shuffle
 
-&nbsp;&nbsp;&nbsp;&nbsp;The actual video/audio playback is handled by YouTube through the iframe player:
+The actual video/audio playback is handled by YouTube through the iframe player:
 
 ```text
 https://www.youtube.com/iframe_api
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;GitHub Pages only hosts the UI and embedded chart data. YouTube streams the actual media.
+GitHub Pages only hosts the UI and embedded chart data. YouTube streams the actual media.
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 5. 📤 Output shown on the website
+### 5. 📤 Output shown on the website
 
-&nbsp;&nbsp;&nbsp;&nbsp;The website outputs:
+The website outputs:
 
-&nbsp;&nbsp;&nbsp;&nbsp;#### Top Songs page
+#### Top Songs page
 
-&nbsp;&nbsp;&nbsp;&nbsp;- Weekly Top Songs list for Vietnam.
-&nbsp;&nbsp;&nbsp;&nbsp;- Current song title.
-&nbsp;&nbsp;&nbsp;&nbsp;- Artist/singer name.
-&nbsp;&nbsp;&nbsp;&nbsp;- View count for the selected song.
-&nbsp;&nbsp;&nbsp;&nbsp;- Last updated time.
-&nbsp;&nbsp;&nbsp;&nbsp;- YouTube iframe playback.
+  - Weekly Top Songs list for Vietnam.
+  - Current song title.
+  - Artist/singer name.
+  - View count for the selected song.
+  - Last updated time.
+  - YouTube iframe playback.
 
-&nbsp;&nbsp;&nbsp;&nbsp;#### Trending page
+#### Trending page
 
-&nbsp;&nbsp;&nbsp;&nbsp;- Trending Videos list for Vietnam.
-&nbsp;&nbsp;&nbsp;&nbsp;- Current video title.
-&nbsp;&nbsp;&nbsp;&nbsp;- Artist/channel name.
-&nbsp;&nbsp;&nbsp;&nbsp;- Last updated time.
-&nbsp;&nbsp;&nbsp;&nbsp;- YouTube iframe playback.
+  - Trending Videos list for Vietnam.
+  - Current video title.
+  - Artist/channel name.
+  - Last updated time.
+  - YouTube iframe playback.
 
 ---
 
 ## IV. 🚀 GitHub Pages Setup
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 1. 📂 Required repository structure
+### 1. 📂 Required repository structure
 
-&nbsp;&nbsp;&nbsp;&nbsp;The repository should keep these files at the root level:
+The repository should keep these files at the root level:
 
 ```text
 index.html
@@ -317,66 +317,66 @@ top_songs.html
 trending.html
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;The update script and workflow should stay here:
+The update script and workflow should stay here:
 
 ```text
 scripts/update_static_pages.py
 .github/workflows/update-charts.yml
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 2. ⚙️ Enable GitHub Pages
+### 2. ⚙️ Enable GitHub Pages
 
-&nbsp;&nbsp;&nbsp;&nbsp;In the GitHub repository:
+In the GitHub repository:
 
-&nbsp;&nbsp;&nbsp;&nbsp;1. Open **Settings**.
-&nbsp;&nbsp;&nbsp;&nbsp;2. Open **Pages**.
-&nbsp;&nbsp;&nbsp;&nbsp;3. Under **Build and deployment**, choose:
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Source: **Deploy from a branch**
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Branch: **main**
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Folder: **/ root**
-&nbsp;&nbsp;&nbsp;&nbsp;4. Click **Save**.
+  1. Open **Settings**.
+  2. Open **Pages**.
+  3. Under **Build and deployment**, choose:
+  - Source: **Deploy from a branch**
+  - Branch: **main**
+  - Folder: **/ root**
+  4. Click **Save**.
 
-&nbsp;&nbsp;&nbsp;&nbsp;After deployment, GitHub will provide a public URL like:
+After deployment, GitHub will provide a public URL like:
 
 ```text
 https://<github-username>.github.io/<repository-name>/
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 3. 🔐 Enable workflow write permission
+### 3. 🔐 Enable workflow write permission
 
-&nbsp;&nbsp;&nbsp;&nbsp;The workflow needs permission to commit updated HTML files back to the repository.
+The workflow needs permission to commit updated HTML files back to the repository.
 
-&nbsp;&nbsp;&nbsp;&nbsp;In the GitHub repository:
+In the GitHub repository:
 
-&nbsp;&nbsp;&nbsp;&nbsp;1. Open **Settings**.
-&nbsp;&nbsp;&nbsp;&nbsp;2. Open **Actions** → **General**.
-&nbsp;&nbsp;&nbsp;&nbsp;3. Find **Workflow permissions**.
-&nbsp;&nbsp;&nbsp;&nbsp;4. Select **Read and write permissions**.
-&nbsp;&nbsp;&nbsp;&nbsp;5. Click **Save**.
+  1. Open **Settings**.
+  2. Open **Actions** → **General**.
+  3. Find **Workflow permissions**.
+  4. Select **Read and write permissions**.
+  5. Click **Save**.
 
-&nbsp;&nbsp;&nbsp;&nbsp;---
+---
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 4. ▶️ Run the workflow manually
+### 4. ▶️ Run the workflow manually
 
-&nbsp;&nbsp;&nbsp;&nbsp;In the GitHub repository:
+In the GitHub repository:
 
-&nbsp;&nbsp;&nbsp;&nbsp;1. Open the **Actions** tab.
-&nbsp;&nbsp;&nbsp;&nbsp;2. Select **Update YouTube Charts Data**.
-&nbsp;&nbsp;&nbsp;&nbsp;3. Click **Run workflow**.
-&nbsp;&nbsp;&nbsp;&nbsp;4. Select branch **main**.
-&nbsp;&nbsp;&nbsp;&nbsp;5. Click **Run workflow** again.
+  1. Open the **Actions** tab.
+  2. Select **Update YouTube Charts Data**.
+  3. Click **Run workflow**.
+  4. Select branch **main**.
+  5. Click **Run workflow** again.
 
-&nbsp;&nbsp;&nbsp;&nbsp;If chart data changes, the workflow commits and pushes updated HTML files automatically.
+If chart data changes, the workflow commits and pushes updated HTML files automatically.
 
 ---
 
 ## V. 🔄 Update Flow
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 1. GitHub Actions run flow
+### 1. GitHub Actions run flow
 
 ```text
 GitHub Actions trigger
@@ -398,7 +398,7 @@ If changed: commit and push to main
 GitHub Pages rebuilds and publishes the updated site
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;### 2. Manual local update flow
+### 2. Manual local update flow
 
 ```text
 Run python scripts/update_static_pages.py locally
