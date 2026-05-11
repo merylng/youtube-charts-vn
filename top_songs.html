@@ -269,6 +269,7 @@
           <div class="rank" id="nowRank">#--</div>
           <h2 class="title" id="nowTitle">Đang tải playlist</h2>
           <div class="artists" id="nowArtists">Vui lòng chờ trong giây lát...</div>
+          <div class="artists" id="nowViews">Views: --</div>
           <div class="controls">
             <button id="prevBtn">Trước</button>
             <button id="playBtn" class="primary">Play</button>
@@ -312,6 +313,7 @@
       nowRank: document.getElementById('nowRank'),
       nowTitle: document.getElementById('nowTitle'),
       nowArtists: document.getElementById('nowArtists'),
+      nowViews: document.getElementById('nowViews'),
       notice: document.getElementById('notice'),
       prev: document.getElementById('prevBtn'),
       play: document.getElementById('playBtn'),
@@ -361,6 +363,12 @@
         minute: '2-digit',
         second: '2-digit'
       });
+    }
+
+    function formatViews(value) {
+      const views = Number(value || 0);
+      if (!views) return 'Views: --';
+      return `${views.toLocaleString('vi-VN')} views`;
     }
 
     function formatChartDate(value) {
@@ -418,6 +426,7 @@
       els.nowRank.textContent = `#${song.rank}`;
       els.nowTitle.textContent = song.title;
       els.nowArtists.textContent = song.artists;
+      els.nowViews.textContent = formatViews(song.views);
       renderList();
 
       if (!playerReady || !song.videoId) {
