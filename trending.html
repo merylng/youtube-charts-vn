@@ -274,7 +274,7 @@
             <button id="playBtn" class="primary">Play</button>
             <button id="nextBtn">Tiếp</button>
             <button id="repeatBtn" aria-pressed="false">Repeat: Off</button>
-            <button id="shuffleBtn">Shuffle</button>
+            <button id="shuffleBtn" aria-pressed="false">Shuffle: Off</button>
           </div>
           <div class="notice" id="notice">
             Trang lấy danh sách Trending Videos VN Right Now từ YouTube Charts thông qua backend local.
@@ -303,6 +303,7 @@
     let playerReady = false;
     let pendingLoad = null;
     let repeatEnabled = false;
+    let shuffleEnabled = false;
 
     const els = {
       range: document.getElementById('rangeLabel'),
@@ -332,6 +333,7 @@
           onStateChange: event => {
             if (event.data === YT.PlayerState.ENDED) {
               if (repeatEnabled && songs[currentIndex]) player.loadVideoById(songs[currentIndex].videoId);
+              else if (shuffleEnabled) shuffleSong(true);
               else nextSong(true);
             }
             updatePlayButton();
@@ -433,6 +435,19 @@
     function nextSong(autoplay) { loadSong(currentIndex + 1, autoplay); }
     function prevSong() { loadSong(currentIndex - 1, true); }
 
+    function shuffleSong(autoplay) {
+      if (!songs.length) return;
+      if (songs.length === 1) {
+        loadSong(0, autoplay);
+        return;
+      }
+      let nextIndex = currentIndex;
+      while (nextIndex === currentIndex) {
+        nextIndex = Math.floor(Math.random() * songs.length);
+      }
+      loadSong(nextIndex, autoplay);
+    }
+
     function updatePlayButton() {
       if (!playerReady) return;
       els.play.textContent = player.getPlayerState() === YT.PlayerState.PLAYING ? 'Pause' : 'Play';
@@ -442,6 +457,12 @@
       els.repeat.textContent = repeatEnabled ? 'Repeat: On' : 'Repeat: Off';
       els.repeat.classList.toggle('primary', repeatEnabled);
       els.repeat.setAttribute('aria-pressed', String(repeatEnabled));
+    }
+
+    function updateShuffleButton() {
+      els.shuffle.textContent = shuffleEnabled ? 'Shuffle: On' : 'Shuffle: Off';
+      els.shuffle.classList.toggle('primary', shuffleEnabled);
+      els.shuffle.setAttribute('aria-pressed', String(shuffleEnabled));
     }
 
     function escapeHtml(value) {
@@ -467,10 +488,12 @@
       else player.loadVideoById(song.videoId);
     });
     els.shuffle.addEventListener('click', () => {
-      if (songs.length) loadSong(Math.floor(Math.random() * songs.length), true);
+      shuffleEnabled = !shuffleEnabled;
+      updateShuffleButton();
     });
 
     updateRepeatButton();
+    updateShuffleButton();
     init();
   </script>
 </body>
