@@ -137,6 +137,18 @@ def normalize_for_match(value):
     return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
+TIMESTAMP_RE = re.compile(r"^\[[^\]]*\]\s*")
+
+
+def plain_from_synced(lyrics):
+    lines = []
+    for line in (lyrics or "").splitlines():
+        line = TIMESTAMP_RE.sub("", line).strip()
+        if line:
+            lines.append(line)
+    return "\n".join(lines)
+
+
 def update_static_data(file_path, payload):
     html = file_path.read_text(encoding="utf-8")
     serialized = json.dumps(payload, ensure_ascii=False)
