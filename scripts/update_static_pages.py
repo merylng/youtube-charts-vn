@@ -1,5 +1,7 @@
 import json
 import re
+import sys
+import unicodedata
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -10,6 +12,7 @@ TRENDING_VIDEOS_PAGE = "https://charts.youtube.com/charts/TrendingVideos/vn/Righ
 INNERTUBE = "https://charts.youtube.com/youtubei/v1/browse?alt=json"
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 TOP_SONGS_HTML = ROOT / "top_songs.html"
 TRENDING_HTML = ROOT / "trending.html"
 
@@ -126,6 +129,12 @@ def extract_trending_videos(data):
 
 def vietnam_timestamp():
     return datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).isoformat(timespec="seconds")
+
+
+def normalize_for_match(value):
+    text = unicodedata.normalize("NFD", str(value or "").lower())
+    text = "".join(char for char in text if not unicodedata.combining(char))
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
 def update_static_data(file_path, payload):
