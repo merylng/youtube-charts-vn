@@ -2,6 +2,7 @@ import json
 import re
 import sys
 import unicodedata
+import urllib.parse
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -10,6 +11,7 @@ from urllib.request import Request, urlopen
 TOP_SONGS_PAGE = "https://charts.youtube.com/charts/TopSongs/vn/weekly"
 TRENDING_VIDEOS_PAGE = "https://charts.youtube.com/charts/TrendingVideos/vn/RightNow"
 INNERTUBE = "https://charts.youtube.com/youtubei/v1/browse?alt=json"
+LRCLIB = "https://lrclib.net/api/get"
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -147,6 +149,44 @@ def plain_from_synced(lyrics):
         if line:
             lines.append(line)
     return "\n".join(lines)
+
+
+def fetch_lyrics(title, artists):
+    key = normalize_for_match(f"{title}|{artists}")
+    if key in fetch_lyrics.cache:
+        return fetch_lyrics.cache[key]
+
+    lyrics = ""
+    try:
+        params = urllib.parse.urlencode({
+            "track_name": title,
+            "artist_name": artists,
+        })
+        request = Request(
+            f"{LRCLIB}?{params}",
+            headers={"User-Agent": "youtube-charts-vn-updater/1.0 (static site updater)"},
+        )
+        with urlopen(request, timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8", "replace"))
+        if not payload.get("instrumental"):
+            track_name = normalize_for_match(payload.get("trackName", ""))
+            artist_name = normalize_for_match(payload.get("artistName", ""))
+            if track_name and (track_name == normalize_for_match(title) or track_name in normalize_for_match(title)):
+                if artist_name and artist_name == normalize_for_match(artists):
+                    plain = payload.get("plainLyrics") or ""
+                    synced = payload.get("syncedLyrics") or ""
+                    if plain.strip():
+                        lyrics = plain.strip()
+                    elif synced.strip():
+                        lyrics = plain_from_synced(synced)
+    except Exception:
+        lyrics = ""
+
+    fetch_lyrics.cache[key] = lyrics
+    return lyrics
+
+
+fetch_lyrics.cache = {}
 
 
 def update_static_data(file_path, payload):

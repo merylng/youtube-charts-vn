@@ -1,9 +1,12 @@
+import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
+from update_static_pages import fetch_lyrics
 from update_static_pages import normalize_for_match
 from update_static_pages import plain_from_synced
 
@@ -32,6 +35,68 @@ class PlainFromSyncedTest(unittest.TestCase):
 
     def test_handles_empty(self):
         self.assertEqual(plain_from_synced(""), "")
+
+
+class FetchLyricsTest(unittest.TestCase):
+    def make_response(self, payload):
+        response = mock.MagicMock()
+        response.__enter__.return_value = response
+        response.status = 200
+        response.read.return_value = json.dumps(payload).encode()
+        return response
+
+    def setUp(self):
+        fetch_lyrics.cache = {}
+
+    def test_returns_plain_lyrics(self):
+        payload = {
+            "trackName": "Tìm Em",
+            "artistName": "Hngle",
+            "plainLyrics": "Lời bài hát",
+            "syncedLyrics": None,
+            "instrumental": False,
+        }
+        with mock.patch("update_static_pages.urlopen", return_value=self.make_response(payload)):
+            self.assertEqual(fetch_lyrics("Tìm Em", "Hngle"), "Lời bài hát")
+
+    def test_uses_synced_when_plain_missing(self):
+        payload = {
+            "trackName": "Tìm Em",
+            "artistName": "Hngle",
+            "plainLyrics": None,
+            "syncedLyrics": "[00:12.34]Line",
+            "instrumental": False,
+        }
+        with mock.patch("update_static_pages.urlopen", return_value=self.make_response(payload)):
+            self.assertEqual(fetch_lyrics("Tìm Em", "Hngle"), "Line")
+
+    def test_rejects_mismatched_artist(self):
+        payload = {
+            "trackName": "Tìm Em",
+            "artistName": "Someone Else",
+            "plainLyrics": "Lời bài hát",
+            "syncedLyrics": None,
+            "instrumental": False,
+        }
+        with mock.patch("update_static_pages.urlopen", return_value=self.make_response(payload)):
+            self.assertEqual(fetch_lyrics("Tìm Em", "Hngle"), "")
+
+    def test_returns_empty_on_http_error(self):
+        with mock.patch("update_static_pages.urlopen", side_effect=Exception("boom")):
+            self.assertEqual(fetch_lyrics("Tìm Em", "Hngle"), "")
+
+    def test_caches_by_title_artist(self):
+        payload = {
+            "trackName": "Tìm Em",
+            "artistName": "Hngle",
+            "plainLyrics": "Lời bài hát",
+            "syncedLyrics": None,
+            "instrumental": False,
+        }
+        with mock.patch("update_static_pages.urlopen", return_value=self.make_response(payload)) as mocked:
+            self.assertEqual(fetch_lyrics("Tìm Em", "Hngle"), "Lời bài hát")
+            self.assertEqual(fetch_lyrics("Tìm Em", "Hngle"), "Lời bài hát")
+            self.assertEqual(mocked.call_count, 1)
 
 
 if __name__ == "__main__":
