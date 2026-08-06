@@ -212,6 +212,33 @@
       line-height: 1.5;
     }
 
+    .lyrics {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.7;
+      white-space: pre-line;
+      max-height: 320px;
+      overflow: auto;
+    }
+
+    .lyrics h3 {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .lyrics .no-lyrics {
+      color: var(--muted);
+    }
+
     .tabs {
       display: flex;
       gap: 10px;
@@ -280,6 +307,10 @@
           <div class="notice" id="notice">
             Trang sẽ ưu tiên lấy tuần mới nhất từ YouTube Charts. Nếu trình duyệt chặn CORS hoặc YouTube đổi API nội bộ, danh sách mẫu sẽ vẫn phát được để bạn dùng giao diện playlist.
           </div>
+          <div class="lyrics" id="lyrics">
+            <h3>Lyrics</h3>
+            <div id="lyricsText"></div>
+          </div>
         </div>
       </article>
 
@@ -316,6 +347,7 @@
       nowArtists: document.getElementById('nowArtists'),
       nowViews: document.getElementById('nowViews'),
       notice: document.getElementById('notice'),
+      lyrics: document.getElementById('lyricsText'),
       prev: document.getElementById('prevBtn'),
       play: document.getElementById('playBtn'),
       next: document.getElementById('nextBtn'),
@@ -429,6 +461,11 @@
       els.nowTitle.textContent = song.title;
       els.nowArtists.textContent = song.artists;
       els.nowViews.textContent = formatViews(song.views);
+      if (song.lyrics) {
+        els.lyrics.innerHTML = escapeHtml(song.lyrics);
+      } else {
+        els.lyrics.innerHTML = '<div class="no-lyrics">Không có lời bài hát cho bài này.</div>';
+      }
       renderList();
 
       if (!playerReady || !song.videoId) {
