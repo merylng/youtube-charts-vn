@@ -27,67 +27,68 @@
     }
 
     .app {
-      width: min(1180px, calc(100% - 32px));
+      width: min(1400px, calc(100% - 28px));
       margin: 0 auto;
-      padding: 32px 0;
+      padding: 14px 0;
     }
 
     header {
       display: flex;
       justify-content: space-between;
-      align-items: end;
+      align-items: center;
       gap: 20px;
-      margin-bottom: 24px;
+      margin-bottom: 12px;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: clamp(30px, 5vw, 56px);
-      line-height: 0.95;
-      letter-spacing: -0.06em;
+      margin: 0 0 2px;
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
     }
 
     .subtitle, .status, .meta {
       color: var(--muted);
       margin: 0;
+      font-size: 13.5px;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
+      gap: 6px;
+      padding: 7px 12px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.06);
       color: var(--text);
       white-space: nowrap;
+      font-size: 13px;
     }
 
     .header-badges {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 10px;
+      align-items: center;
+      gap: 8px;
     }
 
     .updated-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 9px 13px;
+      padding: 7px 11px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.05);
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       white-space: nowrap;
     }
 
     .dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--accent);
       box-shadow: 0 0 16px var(--accent);
@@ -95,18 +96,24 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 420px;
-      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) 400px;
+      gap: 16px;
       align-items: start;
     }
 
     .player-card, .list-card {
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 28px;
+      border-radius: 24px;
       background: rgba(23, 23, 27, 0.86);
       box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
       overflow: hidden;
       backdrop-filter: blur(16px);
+    }
+
+    .player-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 16px;
     }
 
     .player-shell {
@@ -114,42 +121,46 @@
       width: 100%;
       aspect-ratio: 16 / 9;
       background: #000;
+      align-self: start;
     }
 
     #player { width: 100%; height: 100%; }
 
     .now-playing {
-      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 18px;
     }
 
     .rank {
       color: var(--accent);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
 
     .title {
-      margin: 8px 0 6px;
-      font-size: clamp(24px, 3vw, 36px);
-      line-height: 1.05;
-      letter-spacing: -0.04em;
+      margin: 4px 0;
+      font-size: clamp(19px, 1.8vw, 25px);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
     }
 
-    .artists { color: var(--muted); font-size: 17px; }
+    .artists { color: var(--muted); font-size: 14px; }
 
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 18px;
+      gap: 8px;
+      margin-top: 12px;
     }
 
     button {
       border: 0;
       border-radius: 999px;
-      padding: 12px 16px;
+      padding: 9px 13px;
       background: var(--panel-2);
       color: var(--text);
       font: inherit;
@@ -163,63 +174,65 @@
     button.primary:hover { background: #e6002e; }
 
     .list-card {
-      max-height: calc(100vh - 64px);
+      max-height: calc(100vh - 24px);
       display: flex;
       flex-direction: column;
       position: sticky;
-      top: 24px;
+      top: 12px;
     }
 
     .list-head {
-      padding: 20px;
+      padding: 16px 18px;
       border-bottom: 1px solid var(--line);
     }
 
-    .list-head h2 { margin: 0 0 6px; }
-    .status { font-size: 14px; }
+    .list-head h2 { margin: 0 0 4px; font-size: 18px; }
+    .status { font-size: 13px; }
 
     .song-list {
+      flex: 1;
+      min-height: 0;
       overflow: auto;
-      padding: 8px;
+      padding: 6px;
     }
 
     .song {
       width: 100%;
       display: grid;
-      grid-template-columns: 46px 56px minmax(0, 1fr);
-      gap: 12px;
+      grid-template-columns: 40px 44px minmax(0, 1fr);
+      gap: 10px;
       align-items: center;
       text-align: left;
-      padding: 10px;
-      border-radius: 18px;
+      padding: 8px;
+      border-radius: 14px;
       background: transparent;
     }
 
     .song.active { background: rgba(255, 0, 51, 0.15); }
-    .song .num { color: var(--muted); font-weight: 800; text-align: center; }
-    .song img { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; background: #111; }
-    .song-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
-    .song-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 14px; margin-top: 3px; }
+    .song .num { color: var(--muted); font-weight: 800; text-align: center; font-size: 13px; }
+    .song img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: #111; }
+    .song-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; font-size: 14px; }
+    .song-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
 
     .lyrics {
       position: relative;
-      margin-top: 14px;
-      padding: 14px 16px;
+      margin-top: 12px;
+      padding: 12px 14px;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 18px;
+      border-radius: 16px;
       background: rgba(255, 255, 255, 0.05);
       color: var(--text);
-      font-size: 15px;
-      line-height: 1.7;
+      font-size: 14px;
+      line-height: 1.65;
       white-space: pre-line;
-      max-height: 320px;
+      height: min(46vh, 300px);
       overflow: auto;
     }
 
     .lyrics h3 {
-      margin: 0 0 8px;
+      margin: 0 0 6px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -250,19 +263,20 @@
     .tabs {
       display: flex;
       gap: 10px;
-      margin-bottom: 22px;
+      margin-bottom: 14px;
     }
 
     .tab {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 11px 16px;
+      padding: 9px 14px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.06);
       color: var(--muted);
       text-decoration: none;
       font-weight: 800;
+      font-size: 13.5px;
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
@@ -272,10 +286,21 @@
       border-color: var(--accent);
     }
 
+    @media (max-width: 1200px) {
+      .layout { grid-template-columns: minmax(0, 1fr) 360px; }
+      .player-card { grid-template-columns: minmax(0, 1fr) 300px; }
+    }
+
+    @media (max-width: 1000px) {
+      .player-card { display: block; }
+      .now-playing { display: block; }
+      .lyrics { height: auto; max-height: 320px; }
+    }
+
     @media (max-width: 920px) {
       header, .layout { display: block; }
-      .badge { margin-top: 16px; }
-      .list-card { position: static; max-height: none; margin-top: 20px; }
+      .badge { margin-top: 12px; }
+      .list-card { position: static; max-height: none; margin-top: 16px; }
     }
   </style>
 </head>
@@ -301,6 +326,7 @@
       <article class="player-card">
         <div class="player-shell"><div id="player"></div></div>
         <div class="now-playing">
+          <div class="now-head">
           <div class="rank" id="nowRank">#--</div>
           <h2 class="title" id="nowTitle">Đang tải playlist</h2>
           <div class="artists" id="nowArtists">Vui lòng chờ trong giây lát...</div>
@@ -311,6 +337,7 @@
             <button id="nextBtn">Tiếp</button>
             <button id="repeatBtn" aria-pressed="false">Repeat: Off</button>
             <button id="shuffleBtn" aria-pressed="false">Shuffle: Off</button>
+          </div>
           </div>
           <div class="lyrics" id="lyrics">
             <h3>Lyrics</h3>
