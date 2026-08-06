@@ -121,5 +121,28 @@ class FetchLyricsTest(unittest.TestCase):
             self.assertEqual(mocked.call_count, 1)
 
 
+class MainTest(unittest.TestCase):
+    def test_wires_lyrics_into_top_songs(self):
+        songs = [{"title": "Tìm Em", "artists": "Hngle"}, {"title": "Mưa", "artists": "Ai đó"}]
+        top_songs = {"songs": songs, "updatedAt": "old"}
+        trending = {"videos": [], "updatedAt": "old"}
+
+        def fake_lyrics(title, artists):
+            return "Lời bài hát" if title == "Tìm Em" else ""
+
+        with mock.patch("update_static_pages.fetch_chart_home", return_value={}), \
+             mock.patch("update_static_pages.fetch_lyrics", side_effect=fake_lyrics), \
+             mock.patch("update_static_pages.extract_top_songs", return_value=top_songs), \
+             mock.patch("update_static_pages.extract_trending_videos", return_value=trending), \
+             mock.patch("update_static_pages.update_static_data") as mocked_update:
+            from update_static_pages import main
+            main()
+
+        self.assertEqual(top_songs["songs"][0]["lyrics"], "Lời bài hát")
+        self.assertEqual(top_songs["songs"][1]["lyrics"], "")
+        self.assertEqual(top_songs["updatedAt"], trending["updatedAt"])
+        self.assertEqual(mocked_update.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
