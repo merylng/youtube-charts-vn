@@ -201,17 +201,6 @@
     .song-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; }
     .song-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 14px; margin-top: 3px; }
 
-    .notice {
-      margin-top: 14px;
-      padding: 14px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 18px;
-      color: var(--muted);
-      background: rgba(255, 255, 255, 0.05);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
     .lyrics {
       margin-top: 14px;
       padding: 14px 16px;
@@ -236,6 +225,20 @@
     }
 
     .lyrics .no-lyrics {
+      color: var(--muted);
+    }
+
+    .lyrics .lrc-line {
+      padding: 2px 0;
+      transition: color 0.15s ease;
+    }
+
+    .lyrics .lrc-line.active {
+      color: var(--accent, #fff);
+      font-weight: 700;
+    }
+
+    .lyrics .lrc-line:not(.active) {
       color: var(--muted);
     }
 
@@ -304,9 +307,6 @@
             <button id="repeatBtn" aria-pressed="false">Repeat: Off</button>
             <button id="shuffleBtn" aria-pressed="false">Shuffle: Off</button>
           </div>
-          <div class="notice" id="notice">
-            Trang sẽ ưu tiên lấy tuần mới nhất từ YouTube Charts. Nếu trình duyệt chặn CORS hoặc YouTube đổi API nội bộ, danh sách mẫu sẽ vẫn phát được để bạn dùng giao diện playlist.
-          </div>
           <div class="lyrics" id="lyrics">
             <h3>Lyrics</h3>
             <div id="lyricsText"></div>
@@ -334,6 +334,9 @@
     let player;
     let playerReady = false;
     let pendingLoad = null;
+    let lrcLines = [];
+    let activeLrcIndex = -1;
+    let lyricsSyncTimer = null;
     let repeatEnabled = false;
     let shuffleEnabled = false;
 
@@ -346,7 +349,6 @@
       nowTitle: document.getElementById('nowTitle'),
       nowArtists: document.getElementById('nowArtists'),
       nowViews: document.getElementById('nowViews'),
-      notice: document.getElementById('notice'),
       lyrics: document.getElementById('lyricsText'),
       prev: document.getElementById('prevBtn'),
       play: document.getElementById('playBtn'),
@@ -422,13 +424,11 @@
         els.range.textContent = `Tuần mới nhất: ${formatChartDate(chart.rangeEnd)}`;
         els.updatedAt.textContent = `Last Updated Time: ${formatUpdatedAt(chart.updatedAt)}`;
         els.status.textContent = `${songs.length} bài hát từ YouTube Charts`;
-        els.notice.textContent = location.protocol === 'file:' ? 'Đang dùng dữ liệu được nhúng sẵn trong file HTML. Chạy backend local để lấy live chart mới nhất.' : 'Danh sách được lấy từ YouTube Charts VN Weekly mới nhất; player tự chuyển bài khi video kết thúc.';
       } catch (error) {
         els.range.textContent = 'Không tải được chart';
         els.status.textContent = 'Không có dữ liệu để phát';
         els.nowTitle.textContent = 'Không tải được playlist';
         els.nowArtists.textContent = error.message;
-        els.notice.textContent = 'Hãy chạy trang bằng lệnh: python youtube_charts_server.py, rồi mở http://127.0.0.1:8000 để backend local lấy đúng dữ liệu YouTube Charts.';
         return;
       }
 
@@ -461,10 +461,29 @@
       els.nowTitle.textContent = song.title;
       els.nowArtists.textContent = song.artists;
       els.nowViews.textContent = formatViews(song.views);
-      if (song.lyrics) {
-        els.lyrics.innerHTML = escapeHtml(song.lyrics);
+      // New shape: { synced, plain }. Legacy string value is treated as plain.
+      const lyrics = song.lyrics && typeof song.lyrics === 'object' ? song.lyrics : {};
+      const synced = lyrics.synced || '';
+      const plain = typeof song.lyrics === 'string' ? song.lyrics : (lyrics.plain || '');
+      if (synced.trim()) {
+        lrcLines = parseLrc(synced);
+        if (lrcLines.length) {
+          els.lyrics.innerHTML = lrcLines.map(line =>
+            `<div class="lrc-line" data-time="${line.time}">${escapeHtml(line.text)}</div>`
+          ).join('');
+          activeLrcIndex = -1; // force re-highlight after DOM rebuild
+          highlightLrcLine(0, false);
+          startLyricsSync();
+        } else {
+          els.lyrics.innerHTML = '<div class="no-lyrics">Không có lời bài hát cho bài này.</div>';
+          stopLyricsSync();
+        }
+      } else if (plain.trim()) {
+        els.lyrics.innerHTML = escapeHtml(plain);
+        stopLyricsSync();
       } else {
         els.lyrics.innerHTML = '<div class="no-lyrics">Không có lời bài hát cho bài này.</div>';
+        stopLyricsSync();
       }
       renderList();
 
@@ -513,6 +532,76 @@
 
     function escapeHtml(value) {
       return String(value).replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+    }
+
+    // Parse LRC text ("[mm:ss.xx]line" or "[mm:ss]line", multiple timestamps
+    // per line allowed) into [{ time: seconds, text: string }], keeping the
+    // earliest timestamp of each line and skipping empty text lines.
+    function parseLrc(lrcText) {
+      const lines = [];
+      const lineRegex = /^(?:\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\])+(.*)$/;
+      for (const rawLine of String(lrcText).split(/\r?\n/)) {
+        const match = lineRegex.exec(rawLine);
+        if (!match) continue;
+        const text = match[4].trim();
+        if (!text) continue;
+        let earliest = Infinity;
+        const timeRegex = /\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
+        let timeMatch;
+        while ((timeMatch = timeRegex.exec(rawLine)) !== null) {
+          const minutes = Number(timeMatch[1]);
+          const seconds = Number(timeMatch[2]);
+          const fractionDigits = timeMatch[3];
+          let fraction;
+          if (!fractionDigits) fraction = 0;
+          else if (fractionDigits.length === 1) fraction = Number(fractionDigits) * 10; // [mm:ss.x] -> tenths as hundredths
+          else if (fractionDigits.length === 2) fraction = Number(fractionDigits);   // [mm:ss.xx] -> hundredths
+          else fraction = Math.round(Number(fractionDigits) / 10);                   // [mm:ss.xxx] -> thousandths, rounded to hundredths
+          const total = minutes * 60 + seconds + fraction / 100;
+          if (total < earliest) earliest = total;
+        }
+        lines.push({ time: Math.round(earliest * 100) / 100, text });
+      }
+      return lines;
+    }
+
+    function highlightLrcLine(index, scroll) {
+      if (!lrcLines.length || !els.lyrics) return;
+      if (index === activeLrcIndex) return;
+      if (activeLrcIndex >= 0 && activeLrcIndex < lrcLines.length) {
+        els.lyrics.children[activeLrcIndex].classList.remove('active');
+      }
+      activeLrcIndex = index;
+      if (index >= 0 && index < lrcLines.length) {
+        const lineEl = els.lyrics.children[index];
+        lineEl.classList.add('active');
+        if (scroll) lineEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    function updateLrcHighlight() {
+      if (!lrcLines.length || !playerReady || !player || !player.getCurrentTime) return;
+      const currentTime = player.getCurrentTime() || 0;
+      let index = 0;
+      for (let i = 0; i < lrcLines.length; i++) {
+        if (lrcLines[i].time <= currentTime) index = i;
+        else break;
+      }
+      highlightLrcLine(index, true);
+    }
+
+    function startLyricsSync() {
+      stopLyricsSync();
+      if (!lrcLines.length) return;
+      updateLrcHighlight();
+      lyricsSyncTimer = setInterval(updateLrcHighlight, 250);
+    }
+
+    function stopLyricsSync() {
+      if (lyricsSyncTimer !== null) {
+        clearInterval(lyricsSyncTimer);
+        lyricsSyncTimer = null;
+      }
     }
 
     els.prev.addEventListener('click', prevSong);
