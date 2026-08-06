@@ -202,6 +202,7 @@
     .song-artist { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 14px; margin-top: 3px; }
 
     .lyrics {
+      position: relative;
       margin-top: 14px;
       padding: 14px 16px;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -350,6 +351,7 @@
       nowArtists: document.getElementById('nowArtists'),
       nowViews: document.getElementById('nowViews'),
       lyrics: document.getElementById('lyricsText'),
+      lyricsPanel: document.getElementById('lyrics'),
       prev: document.getElementById('prevBtn'),
       play: document.getElementById('playBtn'),
       next: document.getElementById('nextBtn'),
@@ -436,6 +438,18 @@
       loadSong(0, false);
     }
 
+    // Legacy string values are treated as plain text; dict shape is { synced, plain }.
+    function normalizeSongLyrics(lyrics) {
+      if (typeof lyrics === 'string') return { synced: '', plain: lyrics };
+      if (lyrics && typeof lyrics === 'object') {
+        return {
+          synced: typeof lyrics.synced === 'string' ? lyrics.synced : '',
+          plain: typeof lyrics.plain === 'string' ? lyrics.plain : '',
+        };
+      }
+      return { synced: '', plain: '' };
+    }
+
     function renderList() {
       els.list.innerHTML = songs.map((song, index) => `
         <button class="song ${index === currentIndex ? 'active' : ''}" data-index="${index}">
@@ -461,15 +475,12 @@
       els.nowTitle.textContent = song.title;
       els.nowArtists.textContent = song.artists;
       els.nowViews.textContent = formatViews(song.views);
-      // New shape: { synced, plain }. Legacy string value is treated as plain.
-      const lyrics = song.lyrics && typeof song.lyrics === 'object' ? song.lyrics : {};
-      const synced = lyrics.synced || '';
-      const plain = typeof song.lyrics === 'string' ? song.lyrics : (lyrics.plain || '');
+      const { synced, plain } = normalizeSongLyrics(song.lyrics);
       if (synced.trim()) {
         lrcLines = parseLrc(synced);
         if (lrcLines.length) {
           els.lyrics.innerHTML = lrcLines.map(line =>
-            `<div class="lrc-line" data-time="${line.time}">${escapeHtml(line.text)}</div>`
+            `<div class="lrc-line">${escapeHtml(line.text)}</div>`
           ).join('');
           activeLrcIndex = -1; // force re-highlight after DOM rebuild
           highlightLrcLine(0, false);
@@ -575,7 +586,13 @@
       if (index >= 0 && index < lrcLines.length) {
         const lineEl = els.lyrics.children[index];
         lineEl.classList.add('active');
-        if (scroll) lineEl.scrollIntoView({ block: 'nearest' });
+        // Scroll only the lyrics panel (it is position: relative and the
+        // scroll container), not the whole page.
+        if (scroll && els.lyricsPanel) {
+          const panel = els.lyricsPanel;
+          const target = lineEl.offsetTop - panel.clientHeight / 2;
+          panel.scrollTop = Math.max(0, Math.min(target, panel.scrollHeight - panel.clientHeight));
+        }
       }
     }
 
