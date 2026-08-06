@@ -70,6 +70,28 @@ class FetchLyricsTest(unittest.TestCase):
         with mock.patch("update_static_pages.urlopen", return_value=self.make_response(payload)):
             self.assertEqual(fetch_lyrics("Tìm Em", "Hngle"), "Line")
 
+    def test_rejects_wrong_version_subtitle(self):
+        payload = {
+            "trackName": "Em Đồng Ý",
+            "artistName": "Hngle",
+            "plainLyrics": "Lời bài hát",
+            "syncedLyrics": None,
+            "instrumental": False,
+        }
+        with mock.patch("update_static_pages.urlopen", return_value=self.make_response(payload)):
+            self.assertEqual(fetch_lyrics("Em Đồng Ý (Live)", "Hngle"), "")
+
+    def test_accepts_feat_suffix_title(self):
+        payload = {
+            "trackName": "Tìm Em (feat. Bảo Anh)",
+            "artistName": "Hngle",
+            "plainLyrics": "Lời bài hát",
+            "syncedLyrics": None,
+            "instrumental": False,
+        }
+        with mock.patch("update_static_pages.urlopen", return_value=self.make_response(payload)):
+            self.assertEqual(fetch_lyrics("Tìm Em (feat. Bảo Anh)", "Hngle"), "Lời bài hát")
+
     def test_rejects_mismatched_artist(self):
         payload = {
             "trackName": "Tìm Em",

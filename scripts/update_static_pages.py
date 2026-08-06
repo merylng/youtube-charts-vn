@@ -171,7 +171,7 @@ def fetch_lyrics(title, artists):
         if not payload.get("instrumental"):
             track_name = normalize_for_match(payload.get("trackName", ""))
             artist_name = normalize_for_match(payload.get("artistName", ""))
-            if track_name and (track_name == normalize_for_match(title) or track_name in normalize_for_match(title)):
+            if track_name and (track_name == normalize_for_match(title) or normalize_for_match(title) in track_name):
                 if artist_name and artist_name == normalize_for_match(artists):
                     plain = payload.get("plainLyrics") or ""
                     synced = payload.get("syncedLyrics") or ""
