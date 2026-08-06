@@ -156,7 +156,7 @@ def fetch_lyrics(title, artists):
     if key in fetch_lyrics.cache:
         return fetch_lyrics.cache[key]
 
-    lyrics = ""
+    lyrics = {"synced": "", "plain": ""}
     try:
         params = urllib.parse.urlencode({
             "track_name": title,
@@ -173,14 +173,15 @@ def fetch_lyrics(title, artists):
             artist_name = normalize_for_match(payload.get("artistName", ""))
             if track_name and (track_name == normalize_for_match(title) or normalize_for_match(title) in track_name):
                 if artist_name and artist_name == normalize_for_match(artists):
-                    plain = payload.get("plainLyrics") or ""
                     synced = payload.get("syncedLyrics") or ""
+                    plain = payload.get("plainLyrics") or ""
                     if plain.strip():
-                        lyrics = plain.strip()
+                        plain = plain.strip()
                     elif synced.strip():
-                        lyrics = plain_from_synced(synced)
+                        plain = plain_from_synced(synced)
+                    lyrics = {"synced": synced, "plain": plain}
     except Exception:
-        lyrics = ""
+        lyrics = {"synced": "", "plain": ""}
 
     fetch_lyrics.cache[key] = lyrics
     return lyrics
@@ -212,7 +213,7 @@ def main():
     with_lyrics = 0
     for song in top_songs["songs"]:
         song["lyrics"] = fetch_lyrics(song["title"], song["artists"])
-        if song["lyrics"]:
+        if song["lyrics"]["plain"] or song["lyrics"]["synced"]:
             with_lyrics += 1
 
     update_static_data(TOP_SONGS_HTML, top_songs)
