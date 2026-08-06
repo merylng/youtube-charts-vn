@@ -209,10 +209,17 @@ def main():
     top_songs["updatedAt"] = updated_at
     trending["updatedAt"] = updated_at
 
+    with_lyrics = 0
+    for song in top_songs["songs"]:
+        song["lyrics"] = fetch_lyrics(song["title"], song["artists"])
+        if song["lyrics"]:
+            with_lyrics += 1
+
     update_static_data(TOP_SONGS_HTML, top_songs)
     update_static_data(TRENDING_HTML, trending)
 
     print(f"Updated {TOP_SONGS_HTML.name}: {len(top_songs['songs'])} songs, rangeEnd={top_songs.get('rangeEnd', '')}")
+    print(f"Lyrics: {with_lyrics}/{len(top_songs['songs'])} songs")
     print(f"Updated {TRENDING_HTML.name}: {len(trending['videos'])} videos, range={trending.get('rangeLabel', '')}")
     print("Next: commit and push top_songs.html and trending.html to update GitHub Pages.")
 
