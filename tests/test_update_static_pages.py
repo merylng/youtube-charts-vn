@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from update_static_pages import fetch_lyrics
 from update_static_pages import normalize_for_match
 from update_static_pages import plain_from_synced
+from update_static_pages import is_music_video
 
 
 class NormalizeForMatchTest(unittest.TestCase):
@@ -144,9 +145,29 @@ class FetchLyricsTest(unittest.TestCase):
             self.assertEqual(mocked.call_count, 1)
 
 
+class IsMusicVideoTest(unittest.TestCase):
+    def test_flags_when_video_is_much_longer_than_track(self):
+        self.assertTrue(is_music_video(371, 232))
+
+    def test_does_not_flag_when_video_matches_track(self):
+        self.assertFalse(is_music_video(272, 274))
+
+    def test_does_not_flag_when_video_is_shorter(self):
+        self.assertFalse(is_music_video(300, 420))
+
+    def test_returns_false_when_track_duration_missing(self):
+        self.assertFalse(is_music_video(416, None))
+
+    def test_returns_false_when_video_duration_missing(self):
+        self.assertFalse(is_music_video(None, 420))
+
+
 class MainTest(unittest.TestCase):
     def test_wires_lyrics_into_top_songs(self):
-        songs = [{"title": "Tìm Em", "artists": "Hngle"}, {"title": "Mưa", "artists": "Ai đó"}]
+        songs = [
+            {"title": "Tìm Em", "artists": "Hngle", "videoId": "abc123"},
+            {"title": "Mưa", "artists": "Ai đó", "videoId": "def456"},
+        ]
         top_songs = {"songs": songs, "updatedAt": "old"}
         trending = {"videos": [], "updatedAt": "old"}
 
@@ -155,8 +176,13 @@ class MainTest(unittest.TestCase):
                 return {"synced": "", "plain": "Lời bài hát"}
             return {"synced": "", "plain": ""}
 
+        def fake_lrc_duration(title, artists):
+            return 200.0 if title == "Tìm Em" else None
+
         with mock.patch("update_static_pages.fetch_chart_home", return_value={}), \
              mock.patch("update_static_pages.fetch_lyrics", side_effect=fake_lyrics), \
+             mock.patch("update_static_pages.lrc_duration", side_effect=fake_lrc_duration), \
+             mock.patch("update_static_pages.get_video_duration", return_value=300), \
              mock.patch("update_static_pages.extract_top_songs", return_value=top_songs), \
              mock.patch("update_static_pages.extract_trending_videos", return_value=trending), \
              mock.patch("update_static_pages.update_static_data") as mocked_update:
@@ -169,6 +195,8 @@ class MainTest(unittest.TestCase):
         self.assertEqual(top_songs["songs"][1]["lyrics"], {"synced": "", "plain": ""})
         self.assertEqual(top_songs["songs"][1]["lyrics"]["plain"], "")
         self.assertEqual(top_songs["songs"][1]["lyrics"]["synced"], "")
+        self.assertEqual(top_songs["songs"][0]["isMv"], True)
+        self.assertNotIn("isMv", top_songs["songs"][1])
         self.assertEqual(top_songs["updatedAt"], trending["updatedAt"])
         self.assertEqual(mocked_update.call_count, 2)
 

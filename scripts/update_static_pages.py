@@ -129,6 +129,40 @@ def extract_trending_videos(data):
     return {"rangeLabel": "Right Now", "videos": videos}
 
 
+MV_DURATION_RATIO = 1.1
+
+
+def get_video_duration(video_id):
+    try:
+        request = Request(f"https://www.youtube.com/watch?v={video_id}&hl=en", headers={"User-Agent": "Mozilla/5.0"})
+        html = urlopen(request, timeout=15).read().decode("utf-8", "replace")
+        match = re.search(r'"lengthSeconds":"(\d+)"', html)
+        if not match:
+            match = re.search(r'"lengthSeconds":(\d+)', html)
+        if match:
+            return int(match.group(1))
+    except Exception:
+        pass
+    return None
+
+
+def lrc_duration(title, artists):
+    try:
+        params = urllib.parse.urlencode({"track_name": title, "artist_name": artists})
+        request = Request(f"{LRCLIB}?{params}", headers={"User-Agent": "youtube-charts-vn-updater/1.0"})
+        with urlopen(request, timeout=10) as response:
+            payload = json.loads(response.read().decode("utf-8", "replace"))
+        return payload.get("duration")
+    except Exception:
+        return None
+
+
+def is_music_video(video_duration, track_duration):
+    if not video_duration or not track_duration:
+        return False
+    return video_duration > track_duration * MV_DURATION_RATIO
+
+
 def vietnam_timestamp():
     return datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).isoformat(timespec="seconds")
 
@@ -211,16 +245,22 @@ def main():
     trending["updatedAt"] = updated_at
 
     with_lyrics = 0
+    with_mv = 0
     for song in top_songs["songs"]:
         song["lyrics"] = fetch_lyrics(song["title"], song["artists"])
         if song["lyrics"]["plain"] or song["lyrics"]["synced"]:
             with_lyrics += 1
+            track_duration = lrc_duration(song["title"], song["artists"])
+            song["isMv"] = is_music_video(get_video_duration(song["videoId"]), track_duration)
+            if song["isMv"]:
+                with_mv += 1
 
     update_static_data(TOP_SONGS_HTML, top_songs)
     update_static_data(TRENDING_HTML, trending)
 
     print(f"Updated {TOP_SONGS_HTML.name}: {len(top_songs['songs'])} songs, rangeEnd={top_songs.get('rangeEnd', '')}")
     print(f"Lyrics: {with_lyrics}/{len(top_songs['songs'])} songs")
+    print(f"Music videos: {with_mv}/{with_lyrics} songs with lyrics")
     print(f"Updated {TRENDING_HTML.name}: {len(trending['videos'])} videos, range={trending.get('rangeLabel', '')}")
     print("Next: commit and push top_songs.html and trending.html to update GitHub Pages.")
 
