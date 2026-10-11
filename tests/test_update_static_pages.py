@@ -10,6 +10,10 @@ from update_static_pages import fetch_lyrics
 from update_static_pages import normalize_for_match
 from update_static_pages import plain_from_synced
 from update_static_pages import is_music_video
+from update_static_pages import urlopen_with_retry
+from update_static_pages import ChartUnavailableError
+from urllib.error import HTTPError
+from urllib.request import Request
 
 
 class NormalizeForMatchTest(unittest.TestCase):
@@ -162,7 +166,39 @@ class IsMusicVideoTest(unittest.TestCase):
         self.assertFalse(is_music_video(None, 420))
 
 
+def http_error(code):
+    return HTTPError("https://example.com", code, "err", {}, None)
+
+
+class UrlopenWithRetryTest(unittest.TestCase):
+    def test_retries_429_then_succeeds(self):
+        request = Request("https://example.com")
+        with mock.patch("update_static_pages.urlopen", side_effect=[http_error(429), "ok"]) as mocked,              mock.patch("update_static_pages.time.sleep") as sleep:
+            self.assertEqual(urlopen_with_retry(request, 5, delays=(1, 2)), "ok")
+        self.assertEqual(mocked.call_count, 2)
+        sleep.assert_called_once_with(1)
+
+    def test_raises_unavailable_after_exhausting_retries(self):
+        request = Request("https://example.com")
+        with mock.patch("update_static_pages.urlopen", side_effect=http_error(429)),              mock.patch("update_static_pages.time.sleep"):
+            with self.assertRaises(ChartUnavailableError):
+                urlopen_with_retry(request, 5, delays=(1, 2))
+
+    def test_does_not_retry_404(self):
+        request = Request("https://example.com")
+        with mock.patch("update_static_pages.urlopen", side_effect=http_error(404)) as mocked:
+            with self.assertRaises(HTTPError):
+                urlopen_with_retry(request, 5, delays=(1, 2))
+        self.assertEqual(mocked.call_count, 1)
+
+
 class MainTest(unittest.TestCase):
+    def test_keeps_existing_data_when_charts_unavailable(self):
+        with mock.patch("update_static_pages.fetch_chart_home", side_effect=ChartUnavailableError("429")),              mock.patch("update_static_pages.update_static_data") as mocked_update:
+            from update_static_pages import main
+            main()
+        mocked_update.assert_not_called()
+
     def test_wires_lyrics_into_top_songs(self):
         songs = [
             {"title": "Tìm Em", "artists": "Hngle", "videoId": "abc123"},

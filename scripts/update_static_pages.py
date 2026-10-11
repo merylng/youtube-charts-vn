@@ -1,11 +1,13 @@
 import json
 import re
 import sys
+import time
 import unicodedata
 import urllib.parse
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 TOP_SONGS_PAGE = "https://charts.youtube.com/charts/TopSongs/vn/weekly"
@@ -24,9 +26,34 @@ STATIC_DATA_RE = re.compile(
 )
 
 
+RETRY_DELAYS = (5, 15, 45, 90)
+RETRYABLE_STATUS = (429, 500, 502, 503, 504)
+
+
+class ChartUnavailableError(RuntimeError):
+    """YouTube Charts could not be reached (rate limit, network); keep existing data."""
+
+
+def urlopen_with_retry(request, timeout, delays=RETRY_DELAYS):
+    for attempt in range(len(delays) + 1):
+        try:
+            return urlopen(request, timeout=timeout)
+        except (HTTPError, URLError, TimeoutError) as error:
+            if isinstance(error, HTTPError) and error.code not in RETRYABLE_STATUS:
+                raise
+            if attempt == len(delays):
+                raise ChartUnavailableError(f"{request.full_url}: {error}") from error
+            delay = delays[attempt]
+            retry_after = error.headers.get("Retry-After") if isinstance(error, HTTPError) else None
+            if retry_after and retry_after.isdigit():
+                delay = min(max(delay, int(retry_after)), 120)
+            print(f"Request failed ({error}); retrying in {delay}s", file=sys.stderr)
+            time.sleep(delay)
+
+
 def fetch_chart_home(referer):
     page_req = Request(referer, headers={"User-Agent": "Mozilla/5.0"})
-    html = urlopen(page_req, timeout=20).read().decode("utf-8", "replace")
+    html = urlopen_with_retry(page_req, timeout=20).read().decode("utf-8", "replace")
     match = re.search(r"ytcfg\.set\((\{.*?\})\);", html)
     if not match:
         raise RuntimeError("Cannot find YouTube Charts config")
@@ -50,7 +77,7 @@ def fetch_chart_home(referer):
         "X-Goog-Visitor-Id": context["client"].get("visitorData", ""),
     }
     req = Request(INNERTUBE, data=json.dumps(payload, separators=(",", ":")).encode(), headers=headers)
-    return json.loads(urlopen(req, timeout=30).read().decode("utf-8", "replace"))
+    return json.loads(urlopen_with_retry(req, timeout=30).read().decode("utf-8", "replace"))
 
 
 def walk(value):
@@ -239,8 +266,12 @@ def update_static_data(file_path, payload):
 
 def main():
     updated_at = vietnam_timestamp()
-    top_songs = extract_top_songs(fetch_chart_home(TOP_SONGS_PAGE))
-    trending = extract_trending_videos(fetch_chart_home(TRENDING_VIDEOS_PAGE))
+    try:
+        top_songs = extract_top_songs(fetch_chart_home(TOP_SONGS_PAGE))
+        trending = extract_trending_videos(fetch_chart_home(TRENDING_VIDEOS_PAGE))
+    except ChartUnavailableError as error:
+        print(f"YouTube Charts unavailable, keeping existing data: {error}")
+        return
     top_songs["updatedAt"] = updated_at
     trending["updatedAt"] = updated_at
 
