@@ -39,4 +39,5 @@ jobs:
 
           TODAY=$(TZ=Asia/Ho_Chi_Minh date +"%Y/%m/%d")
           git commit -m "update lasted data - $TODAY"
+          git pull --rebase origin main
           git push
