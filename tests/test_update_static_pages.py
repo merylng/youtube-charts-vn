@@ -237,5 +237,14 @@ class MainTest(unittest.TestCase):
         self.assertEqual(mocked_update.call_count, 2)
 
 
+class Forbidden403Test(unittest.TestCase):
+    def test_403_is_unavailable_and_not_retried(self):
+        request = Request("https://example.com")
+        with mock.patch("update_static_pages.urlopen", side_effect=http_error(403)) as mocked:
+            with self.assertRaises(ChartUnavailableError):
+                urlopen_with_retry(request, 5, delays=(1, 2))
+        self.assertEqual(mocked.call_count, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

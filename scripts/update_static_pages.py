@@ -39,6 +39,9 @@ def urlopen_with_retry(request, timeout, delays=RETRY_DELAYS):
         try:
             return urlopen(request, timeout=timeout)
         except (HTTPError, URLError, TimeoutError) as error:
+            if isinstance(error, HTTPError) and error.code == 403:
+                # Bot challenge / missing permission: retrying will not help.
+                raise ChartUnavailableError(f"{request.full_url}: {error}") from error
             if isinstance(error, HTTPError) and error.code not in RETRYABLE_STATUS:
                 raise
             if attempt == len(delays):
@@ -266,34 +269,39 @@ def update_static_data(file_path, payload):
 
 def main():
     updated_at = vietnam_timestamp()
+
+    top_songs = None
+    trending = None
     try:
         top_songs = extract_top_songs(fetch_chart_home(TOP_SONGS_PAGE))
         trending = extract_trending_videos(fetch_chart_home(TRENDING_VIDEOS_PAGE))
     except ChartUnavailableError as error:
-        print(f"YouTube Charts unavailable, keeping existing data: {error}")
-        return
-    top_songs["updatedAt"] = updated_at
-    trending["updatedAt"] = updated_at
+        print(f"::warning::YouTube Charts unavailable, keeping existing data: {error}")
 
-    with_lyrics = 0
-    with_mv = 0
-    for song in top_songs["songs"]:
-        song["lyrics"] = fetch_lyrics(song["title"], song["artists"])
-        if song["lyrics"]["plain"] or song["lyrics"]["synced"]:
-            with_lyrics += 1
-            track_duration = lrc_duration(song["title"], song["artists"])
-            song["isMv"] = is_music_video(get_video_duration(song["videoId"]), track_duration)
-            if song["isMv"]:
-                with_mv += 1
+    if top_songs is not None:
+        top_songs["updatedAt"] = updated_at
+        with_lyrics = 0
+        with_mv = 0
+        for song in top_songs["songs"]:
+            song["lyrics"] = fetch_lyrics(song["title"], song["artists"])
+            if song["lyrics"]["plain"] or song["lyrics"]["synced"]:
+                with_lyrics += 1
+                track_duration = lrc_duration(song["title"], song["artists"])
+                song["isMv"] = is_music_video(get_video_duration(song["videoId"]), track_duration)
+                if song["isMv"]:
+                    with_mv += 1
+        update_static_data(TOP_SONGS_HTML, top_songs)
+        print(f"Updated {TOP_SONGS_HTML.name}: {len(top_songs['songs'])} songs, rangeEnd={top_songs.get('rangeEnd', '')}")
+        print(f"Lyrics: {with_lyrics}/{len(top_songs['songs'])} songs")
+        print(f"Music videos: {with_mv}/{with_lyrics} songs with lyrics")
 
-    update_static_data(TOP_SONGS_HTML, top_songs)
-    update_static_data(TRENDING_HTML, trending)
+    if trending is not None:
+        trending["updatedAt"] = updated_at
+        update_static_data(TRENDING_HTML, trending)
+        print(f"Updated {TRENDING_HTML.name}: {len(trending['videos'])} videos, range={trending.get('rangeLabel', '')}")
 
-    print(f"Updated {TOP_SONGS_HTML.name}: {len(top_songs['songs'])} songs, rangeEnd={top_songs.get('rangeEnd', '')}")
-    print(f"Lyrics: {with_lyrics}/{len(top_songs['songs'])} songs")
-    print(f"Music videos: {with_mv}/{with_lyrics} songs with lyrics")
-    print(f"Updated {TRENDING_HTML.name}: {len(trending['videos'])} videos, range={trending.get('rangeLabel', '')}")
-    print("Next: commit and push top_songs.html and trending.html to update GitHub Pages.")
+    if top_songs is not None and trending is not None:
+        print("Next: commit and push top_songs.html and trending.html to update GitHub Pages.")
 
 
 if __name__ == "__main__":

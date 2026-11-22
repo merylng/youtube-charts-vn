@@ -231,6 +231,10 @@ Accept-Language = vi-VN
 
 This is important because GitHub Actions runners may run outside Vietnam. Without forcing the context, the fetched chart can accidentally become US/global data.
 
+### Known limitation: CAPTCHA on YouTube Charts
+
+Since about 2026-11-19, `charts.youtube.com` answers automated clients with a reCAPTCHA / `HTTP 403 PERMISSION_DENIED`. The updater treats a 403 as "Charts unavailable": it is not retried, the existing data in the HTML files is kept, and the workflow logs a `::warning::` instead of failing. Data resumes updating automatically once YouTube Charts is reachable again.
+
 ---
 
 ## V. 🖥️ UI Behavior
